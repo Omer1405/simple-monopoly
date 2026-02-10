@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Monopoly</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+
+        #game-board {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .player {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .player.current {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            transform: scale(1.05);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        button.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button.secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        button.secondary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #game-message {
+            display: none;
+            padding: 15px;
+            background: #48bb78;
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        #mode-selection {
+            text-align: center;
+            padding: 40px;
+        }
+
+        #mode-selection button {
+            margin: 10px;
+            padding: 20px 40px;
+            font-size: 18px;
+        }
+
+        .dice-display {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .dice-display .dice {
+            font-size: 3em;
+            margin: 10px;
+        }
+
+        #session-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Simple Monopoly 🎲</h1>
+        
+        <div id="game-message"></div>
+
+        <div id="mode-selection">
+            <h2>Spielmodus wählen</h2>
+            <button class="primary" onclick="startGame('offline')">🤖 Offline (vs KI)</button>
+            <button class="secondary" onclick="startGame('online')">🌐 Online (Multiplayer)</button>
+        </div>
+
+        <div id="game-content" style="display: none;">
+            <div id="session-info" style="display: none;">
+                <strong>Session Code:</strong> <span id="session-code"></span>
+            </div>
+
+            <div class="game-container">
+                <div>
+                    <canvas id="game-board"></canvas>
+                </div>
+
+                <div class="sidebar">
+                    <div class="card">
+                        <h3>Spieler</h3>
+                        <div id="player-info"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Würfel</h3>
+                        <div id="dice-result" class="dice-display">
+                            <div class="dice">🎲 ?</div>
+                        </div>
+                    </div>
+
+                    <div class="card controls">
+                        <h3>Aktionen</h3>
+                        <button id="roll-btn" class="primary" onclick="rollDice()">🎲 Würfeln</button>
+                        <button id="buy-btn" class="secondary" onclick="buyProperty()" style="display: none;">💰 Kaufen</button>
+                        <button id="end-turn-btn" class="primary" onclick="endTurn()">➡️ Zug beenden</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import UI from './src/ui.js';
+        
+        let ui;
+        let gameInstance;
+        let currentMode = 'offline';
+
+        window.startGame = function(mode) {
+            currentMode = mode;
+            document.getElementById('mode-selection').style.display = 'none';
+            document.getElementById('game-content').style.display = 'block';
+
+            if (mode === 'online') {
+                document.getElementById('session-info').style.display = 'block';
+                document.getElementById('session-code').textContent = generateSessionCode();
+            }
+
+            ui = new UI('game-board');
+            ui.init();
+
+            initializeGame(mode);
+        };
+
+        function generateSessionCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        function initializeGame(mode) {
+            ui.showMessage(`Spiel im ${mode === 'offline' ? 'Offline' : 'Online'} Modus gestartet!`);
+        }
+
+        window.rollDice = function() {
+            const die1 = Math.floor(Math.random() * 6) + 1;
+            const die2 = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('dice-result').innerHTML = `
+                <div class="dice">🎲 ${die1} + ${die2} = ${die1 + die2}</div>
+            `;
+            ui.showMessage(`Du hast ${die1 + die2} gewürfelt!`);
+        };
+
+        window.buyProperty = function() {
+            ui.showMessage('Grundstück gekauft!');
+            document.getElementById('buy-btn').style.display = 'none';
+        };
+
+        window.endTurn = function() {
+            ui.showMessage('Zug beendet!');
+        };
+    </script>
+</body>
+</html>
