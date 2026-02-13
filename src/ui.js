@@ -1,4 +1,5 @@
 class UI {
+<<<<<<< HEAD
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.context = this.canvas.getContext('2d');
@@ -43,51 +44,32 @@ class UI {
 
     render() {
         this.clearCanvas();
-        this.drawBoard();
-        this.renderPlayers();
-        this.renderDice();
+=======
+    constructor() {
+        this.board = [];
+        this.message = '';
     }
 
-    clearCanvas() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    init() {
+        // Initialize the UI components
+>>>>>>> 6f605e941f293e48320b346cd72c3390be2e90bd
+        this.drawBoard();
     }
 
     drawBoard() {
-        // Draw each field on the board
-        this.boardFields.forEach(field => {
-            // Render field at field.x, field.y
-        });
-        this.drawCenterText();
+        // Logic for drawing the game board
+        console.log('Drawing the game board');
+        // Additional logic here
     }
 
-    drawCenterText() {
-        this.context.fillText('MONOPOLY', this.canvas.width / 2, this.canvas.height / 2);
+    showMessage(msg) {
+        this.message = msg;
+        console.log(this.message);
     }
-
-    renderPlayers() {
-        this.players.forEach((player, index) => {
-            const pos = this.calculatePlayerPosition(player.position);
-            this.context.fillStyle = player.color;
-            this.context.beginPath();
-            this.context.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
-            this.context.fill();
-        });
-    }
-
-    calculatePlayerPosition(position) {
-        // Calculate based on position on board
-        return { x: 0, y: 0 };
-    }
-
-    nextTurn() {
-        this.currentTurn = (this.currentTurn + 1) % this.players.length;
-    }
-
-    renderDice() {
-        // Render dice on UI
-    }
-
-    manageButtonStates() {
-        // Enable or disable buttons based on game state
-    }
+<<<<<<< HEAD
 }
+=======
+}
+
+export default UI;
+>>>>>>> 6f605e941f293e48320b346cd72c3390be2e90bd
