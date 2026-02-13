@@ -1,41 +1,66 @@
-export class Player {
-  constructor(id, name, color) {
-    this.id = id;
-    this.name = name;
-    this.color = color;
-    this.position = 0;
-    this.money = 1500;
-    this.properties = [];
-    this.inJail = false;
-  }
-
-  move(steps, boardLength) {
-    this.position = (this.position + steps) % boardLength;
-    // If player passes "Los", earn 200
-    if (this.position < steps) {
-      this.money += 200;
+class Player {
+    constructor(id, name, color) {
+        this.id = id;
+        this.name = name;
+        this.color = color;
+        this.balance = 1500; // Starting money
+        this.properties = [];
+        this.isInJail = false;
     }
-  }
 
-  buyProperty(field) {
-    if (this.money >= field.price && field.price > 0) {
-      this.money -= field.price;
-      this.properties.push(field.id);
-      field.owner = this.id;
-      return true;
+    move(steps) {
+        // Logic for moving the player on the board
     }
-    return false;
-  }
 
-  payRent(amount) {
-    this.money -= amount;
-  }
+    receiveMoney(amount) {
+        this.balance += amount;
+    }
 
-  receiveRent(amount) {
-    this.money += amount;
-  }
+    payMoney(amount) {
+        if (this.balance >= amount) {
+            this.balance -= amount;
+        } else {
+            this.isBankrupt();
+        }
+    }
 
-  isBankrupt() {
-    return this.money < 0;
-  }
+    buyProperty(property) {
+        this.receiveMoney(-property.price);
+        this.properties.push(property);
+    }
+
+    payRent(rent) {
+        this.payMoney(rent);
+    }
+
+    receiveRent(rent) {
+        this.receiveMoney(rent);
+    }
+
+    mortgage(property) {
+        // Logic for mortgaging a property
+    }
+
+    isBankrupt() {
+        // Logic for declaring bankruptcy
+        console.log(`${this.name} is bankrupt!`);
+    }
+
+    // Jail-related methods
+    goToJail() {
+        this.isInJail = true;
+    }
+
+    getOutOfJail() {
+        this.isInJail = false;
+    }
+
+    // Building methods
+    buildHouse(property) {
+        // Logic for building a house
+    }
+
+    buildHotel(property) {
+        // Logic for building a hotel
+    }
 }
