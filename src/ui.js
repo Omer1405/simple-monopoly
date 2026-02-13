@@ -12,7 +12,7 @@ class UI {
     createBoardFields() {
         const fields = [];
         for (let i = 0; i < 40; i++) {
-            fields.push({ id: i, x: /* calculate x */, y: /* calculate y */, name: `Field ${i + 1}` });
+            fields.push({ id: i, x: 0, y: 0, name: `Field ${i + 1}` });
         }
         return fields;
    }
@@ -76,7 +76,7 @@ class UI {
 
     calculatePlayerPosition(position) {
         // Calculate based on position on board
-        return { x: /* x position */, y: /* y position */ };
+        return { x: 0, y: 0 };
     }
 
     nextTurn() {
