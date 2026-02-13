@@ -3,14 +3,45 @@
 <head>
     <title>Monopoly</title>
     <style>
-        body { font-family: Arial; background: #667eea; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 20px; text-align: center; }
-        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; border: none; border-radius: 8px; background: #667eea; color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #667eea; min-height: 100vh; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 20px; max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 20px; }
+        
+        button { padding: 12px 24px; font-size: 16px; margin: 10px 5px; cursor: pointer; border: none; border-radius: 8px; background: #667eea; color: white; }
         button:hover { background: #5568d3; }
-        #start { text-align: center; }
+        
+        #start { text-align: center; padding: 40px; }
+        #playerSetup { display: none; padding: 20px; }
         #game { display: none; }
-        canvas { border: 3px solid #333; background: #2d5016; margin: 20px 0; }
-        #message { font-size: 18px; color: #667eea; font-weight: bold; }
+        
+        .setup-container { max-width: 600px; margin: 0 auto; }
+        .player-input { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .player-input input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .color-picker { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .color-option { width: 50px; height: 50px; border-radius: 4px; cursor: pointer; border: 3px solid transparent; }
+        .color-option.selected { border-color: #000; }
+        
+        .game-layout { display: flex; gap: 20px; }
+        .game-board { flex: 1; }
+        .players-panel { width: 300px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 2px solid #ddd; }
+        
+        canvas { border: 3px solid #333; background: #2d5016; display: block; }
+        #message { font-size: 16px; color: #667eea; font-weight: bold; margin-top: 15px; text-align: center; }
+        
+        .dice-area { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; align-items: center; }
+        .dice { width: 60px; height: 60px; background: white; border: 3px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; } 
+        #diceResult { font-weight: bold; font-size: 18px; color: #667eea; min-width: 150px; }
+        
+        .controls { text-align: center; margin-top: 20px; }
+        
+        .players-list { list-style: none; }
+        .player-item { padding: 12px; margin-bottom: 10px; background: white; border-radius: 6px; border-left: 4px solid; display: flex; align-items: center; gap: 10px; }
+        .player-item.active { background: #fffacd; font-weight: bold; }
+        .player-color { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #333; }
+        .player-info { flex: 1; }
+        .player-name { font-weight: bold; }
+        .player-money { font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
@@ -18,44 +49,344 @@
         <h1>🎲 Monopoly 🎲</h1>
         
         <div id="start">
-            <button onclick="startGame()">🎮 Spiel starten</button>
+            <button onclick="showPlayerSetup()">🎮 Spiel starten</button>
+        </div>
+
+        <div id="playerSetup">
+            <div class="setup-container">
+                <h2>Spieler hinzufügen</h2>
+                <div class="player-input">
+                    <input type="text" id="playerName" placeholder="Spielername">
+                    <label>Farbe wählen:</label>
+                    <div class="color-picker" id="colorPicker"></div>
+                    <button onclick="addPlayer()">Spieler hinzufügen</button>
+                </div>
+                
+                <h3>Spieler im Spiel:</h3>
+                <ul class="players-list" id="setupPlayersList"></ul>
+                
+                <button onclick="startGameWithPlayers()" style="background: #28a745; margin-top: 20px;">Spiel starten</button>
+                <button onclick="goBack()" style="background: #6c757d;">Zurück</button>
+            </div>
         </div>
 
         <div id="game">
-            <canvas id="board" width="600" height="600"></canvas>
-            <br>
-            <button onclick="rollDice()">🎲 Würfeln</button>
-            <button onclick="endTurn()">➡️ Zug beenden</button>
-            <p id="message">Willkommen!</p>
+            <div class="game-layout">
+                <div class="game-board">
+                    <div class="dice-area">
+                        <div class="dice" id="dice1">⚁</div>
+                        <div class="dice" id="dice2">⚂</div>
+                        <p id="diceResult"></p>
+                    </div>
+                    <canvas id="board" width="800" height="800"></canvas>
+                    <div class="controls">
+                        <button onclick="rollDice()">🎲 Würfeln</button>
+                        <button onclick="endTurn()">➡️ Zug beenden</button>
+                    </div>
+                    <p id="message">Willkommen!</p>
+                </div>
+                <div class="players-panel">
+                    <h3>Spieler</h3>
+                    <ul class="players-list" id="gamePlayersList"></ul>
+                </div>
+            </div>
         </div>
     </div>
 
+    <script src="src/board.js"></script>
     <script>
-        let gameActive = false;
-        let players = [
-            {name: 'Spieler 1', position: 0, money: 1500},
-            {name: 'Spieler 2', position: 0, money: 1500}
+        // Verfügbare Farben
+        const availableColors = [
+            { hex: '#FF6B6B', name: 'Rot' },
+            { hex: '#4ECDC4', name: 'Cyan' },
+            { hex: '#FFE66D', name: 'Gelb' },
+            { hex: '#95E1D3', name: 'Minze' },
+            { hex: '#C7CEEA', name: 'Lila' },
+            { hex: '#B5EAD7', name: 'Grün' }
         ];
+        
+        let gameActive = false;
+        let players = [];
         let currentPlayer = 0;
+        let selectedColor = availableColors[0];
+        
+        // Color mapping for board
+        const colorMap = {
+            'brown': '#8B4513',
+            'lightblue': '#87CEEB',
+            'pink': '#FF69B4',
+            'orange': '#FFA500',
+            'red': '#FF0000',
+            'yellow': '#FFFF00',
+            'green': '#00AA00',
+            'darkblue': '#0000FF'
+        };
 
-        function startGame() {
-            gameActive = true;
+        // Initialisiere Farbwähler
+        function initColorPicker() {
+            const picker = document.getElementById('colorPicker');
+            picker.innerHTML = '';
+            availableColors.forEach((color, idx) => {
+                const option = document.createElement('div');
+                option.className = 'color-option' + (idx === 0 ? ' selected' : '');
+                option.style.backgroundColor = color.hex;
+                option.onclick = () => selectColor(color, option);
+                picker.appendChild(option);
+            });
+        }
+
+        function selectColor(color, element) {
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedColor = color;
+        }
+
+        function showPlayerSetup() {
+            players = [];
+            selectedColor = availableColors[0];
             document.getElementById('start').style.display = 'none';
+            document.getElementById('playerSetup').style.display = 'block';
+            initColorPicker();
+            updateSetupList();
+        }
+
+        function addPlayer() {
+            const nameInput = document.getElementById('playerName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert('Bitte Spielernamen eingeben!');
+                return;
+            }
+            
+            if (players.some(p => p.name === name)) {
+                alert('Spieler mit diesem Namen existiert bereits!');
+                return;
+            }
+
+            players.push({
+                name: name,
+                position: 0,
+                money: 1500,
+                color: selectedColor.hex
+            });
+
+            nameInput.value = '';
+            updateSetupList();
+        }
+
+        function updateSetupList() {
+            const list = document.getElementById('setupPlayersList');
+            list.innerHTML = '';
+            players.forEach((player, idx) => {
+                const li = document.createElement('li');
+                li.className = 'player-item';
+                li.style.borderLeftColor = player.color;
+                li.innerHTML = `
+                    <div class="player-color" style="background-color: ${player.color}"></div>
+                    <div class="player-info">
+                        <div class="player-name">${player.name}</div>
+                    </div>
+                    <button onclick="removePlayer(${idx})" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">Löschen</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function removePlayer(idx) {
+            players.splice(idx, 1);
+            updateSetupList();
+        }
+
+        function startGameWithPlayers() {
+            if (players.length < 2) {
+                alert('Mindestens 2 Spieler erforderlich!');
+                return;
+            }
+
+            gameActive = true;
+            document.getElementById('playerSetup').style.display = 'none';
             document.getElementById('game').style.display = 'block';
+            currentPlayer = 0;
             drawBoard();
-            updateMessage(players[0].name + ' ist am Zug!');
+            updateGameInfo();
+        }
+
+        function goBack() {
+            document.getElementById('playerSetup').style.display = 'none';
+            document.getElementById('start').style.display = 'block';
         }
 
         function drawBoard() {
             const canvas = document.getElementById('board');
             const ctx = canvas.getContext('2d');
+            const size = 800;
+            const fieldSize = size / 11;
+
             ctx.fillStyle = '#2d5016';
-            ctx.fillRect(0, 0, 600, 600);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 30px Arial';
+            ctx.fillRect(0, 0, size, size);
+
+            // Äußerer Rahmen (die 40 Felder)
+            for (let i = 0; i < 40; i++) {
+                let x, y, side;
+
+                if (i < 10) {
+                    // Bottom row (unten)
+                    x = size - (i + 1) * fieldSize;
+                    y = size - fieldSize;
+                    side = 'bottom';
+                } else if (i < 20) {
+                    // Left column (links)
+                    x = 0;
+                    y = size - (i - 9) * fieldSize;
+                    side = 'left';
+                } else if (i < 30) {
+                    // Top row (oben)
+                    x = (i - 20) * fieldSize;
+                    y = 0;
+                    side = 'top';
+                } else {
+                    // Right column (rechts)
+                    x = size - fieldSize;
+                    y = (i - 30) * fieldSize;
+                    side = 'right';
+                }
+
+                drawField(ctx, x, y, fieldSize, monopolyBoard[i], side);
+            }
+
+            // Innenbereich
+            ctx.fillStyle = '#1a3d0a';
+            ctx.fillRect(fieldSize, fieldSize, size - 2 * fieldSize, size - 2 * fieldSize);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Monopoly', size / 2, size / 2);
+
+            // Spieler zeichnen
+            drawPlayers(ctx, fieldSize, size);
+        }
+
+        function drawField(ctx, x, y, size, field, side) {
+            // Bestimme Farbe basierend auf Typ
+            let fieldColor = '#FFFFFF'; // Default
+            
+            if (field.type === 'corner') {
+                fieldColor = '#FFFFFF';
+            } else if (field.type === 'property') {
+                fieldColor = colorMap[field.color] || '#FFFFFF';
+            } else if (field.type === 'railroad') {
+                fieldColor = '#808080';
+            } else if (field.type === 'utility') {
+                fieldColor = '#FFD700';
+            } else if (field.type === 'community') {
+                fieldColor = '#FFD700';
+            } else if (field.type === 'chance') {
+                fieldColor = '#FF8C00';
+            } else if (field.type === 'tax') {
+                fieldColor = '#FFFFFF';
+            }
+
+            // Hintergrund
+            ctx.fillStyle = fieldColor;
+            ctx.fillRect(x, y, size, size);
+
+            // Rahmen
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, size, size);
+
+            // Text
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 10px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('MONOPOLY', 300, 300);
+
+            const lines = field.name.split('\n');
+            const lineHeight = 11;
+            const totalHeight = (lines.length - 1) * lineHeight;
+
+            // Unterschiedliche Ausrichtung pro Seite
+            if (side === 'bottom') {
+                // Unten - Text zeigt nach oben (normal)
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x + size / 2, y + size / 2 - totalHeight / 2 + i * lineHeight);
+                });
+                if (field.price && field.price > 0) {
+                    ctx.font = '8px Arial';
+                    ctx.fillText(field.price + '€', x + size / 2, y + size / 2 + totalHeight / 2 + 10);
+                }
+            } else if (side === 'top') {
+                // Oben - Text zeigt nach unten (normal)
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x + size / 2, y + size / 2 - totalHeight / 2 + i * lineHeight);
+                });
+                if (field.price && field.price > 0) {
+                    ctx.font = '8px Arial';
+                    ctx.fillText(field.price + '€', x + size / 2, y + size / 2 + totalHeight / 2 + 10);
+                }
+            } else if (side === 'left') {
+                // Links - Text zeigt nach rechts (90° CW)
+                ctx.save();
+                ctx.translate(x + size / 2, y + size / 2);
+                ctx.rotate(Math.PI / 2);
+                
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, 0, -totalHeight / 2 + i * lineHeight);
+                });
+                
+                if (field.price && field.price > 0) {
+                    ctx.font = '8px Arial';
+                    ctx.fillText(field.price + '€', 0, totalHeight / 2 + 10);
+                }
+                
+                ctx.restore();
+            } else if (side === 'right') {
+                // Rechts - Text zeigt nach links (-90° CCW)
+                ctx.save();
+                ctx.translate(x + size / 2, y + size / 2);
+                ctx.rotate(-Math.PI / 2);
+                
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, 0, -totalHeight / 2 + i * lineHeight);
+                });
+                
+                if (field.price && field.price > 0) {
+                    ctx.font = '8px Arial';
+                    ctx.fillText(field.price + '€', 0, totalHeight / 2 + 10);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        function drawPlayers(ctx, fieldSize, size) {
+            for (let i = 0; i < players.length; i++) {
+                const field = players[i].position % 40;
+                let posX, posY;
+
+                if (field < 10) {
+                    posX = size - (field + 1) * fieldSize + fieldSize / 2;
+                    posY = size - fieldSize / 4;
+                } else if (field < 20) {
+                    posX = fieldSize / 4;
+                    posY = size - (field - 9) * fieldSize + fieldSize / 2;
+                } else if (field < 30) {
+                    posX = (field - 19) * fieldSize + fieldSize / 2;
+                    posY = fieldSize / 4;
+                } else {
+                    posX = size - fieldSize / 4;
+                    posY = (field - 29) * fieldSize + fieldSize / 2;
+                }
+
+                ctx.fillStyle = players[i].color;
+                ctx.beginPath();
+                ctx.arc(posX, posY, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
         }
 
         function rollDice() {
@@ -63,17 +394,76 @@
             const die2 = Math.floor(Math.random() * 6) + 1;
             const total = die1 + die2;
             
-            players[currentPlayer].position += total;
-            updateMessage(players[currentPlayer].name + ' würfelt: ' + total + ' (' + die1 + '+' + die2 + ')');
+            // Würfel anzeigen
+            document.getElementById('dice1').textContent = getDiceFace(die1);
+            document.getElementById('dice2').textContent = getDiceFace(die2);
+            document.getElementById('diceResult').textContent = `Summe: ${total}`;
+            
+            // Spieler animiert bewegen
+            animatePlayerMovement(currentPlayer, total);
+        }
+
+        function getDiceFace(num) {
+            const faces = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            return faces[num];
+        }
+
+        function animatePlayerMovement(playerIndex, steps) {
+            const canvas = document.getElementById('board');
+            const fieldSize = canvas.width / 11;
+            const player = players[playerIndex];
+            const startPos = player.position;
+            const endPos = (startPos + steps) % 40;
+            let currentStep = 0;
+            const animationSpeed = 150; // ms pro Feld (kleiner = schneller)
+            let currentField = startPos;
+
+            function animate() {
+                if (currentStep <= steps) {
+                    player.position = (startPos + currentStep) % 40;
+                    drawBoard();
+                    currentStep++;
+                    setTimeout(animate, animationSpeed);
+                } else {
+                    player.position = endPos;
+                    drawBoard();
+                    updateGameInfo(players[playerIndex].name + ' ist bei Feld ' + monopolyBoard[endPos].name + ' angekommen!');
+                }
+            }
+            animate();
         }
 
         function endTurn() {
-            currentPlayer = (currentPlayer + 1) % 2;
-            updateMessage(players[currentPlayer].name + ' ist jetzt am Zug!');
+            currentPlayer = (currentPlayer + 1) % players.length;
+            document.getElementById('dice1').textContent = '⚀';
+            document.getElementById('dice2').textContent = '⚀';
+            document.getElementById('diceResult').textContent = '';
+            updateGameInfo(players[currentPlayer].name + ' ist jetzt am Zug!');
         }
 
-        function updateMessage(msg) {
-            document.getElementById('message').textContent = msg;
+        function updateGameInfo(msg) {
+            if (msg) {
+                document.getElementById('message').textContent = msg;
+            }
+            updateGamePlayersList();
+        }
+
+        function updateGamePlayersList() {
+            const list = document.getElementById('gamePlayersList');
+            list.innerHTML = '';
+            players.forEach((player, idx) => {
+                const li = document.createElement('li');
+                li.className = 'player-item' + (idx === currentPlayer ? ' active' : '');
+                li.style.borderLeftColor = player.color;
+                li.innerHTML = `
+                    <div class="player-color" style="background-color: ${player.color}"></div>
+                    <div class="player-info">
+                        <div class="player-name">${player.name}</div>
+                        <div class="player-money">💰 ${player.money}€</div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
         }
     </script>
 </body>
