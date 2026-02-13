@@ -1,21 +1,25 @@
-class YourClassName {
-    // Class properties
-    property1;
-    property2;
-
-    constructor(property1, property2) {
-        this.property1 = property1;
-        this.property2 = property2;
+class UI {
+    constructor(board, players, dice) {
+        this.board = board;
+        this.players = players;
+        this.dice = dice;
     }
 
-    // Class methods
-    method1() {
-        // method logic
+    renderBoard() {
+        // Logic for rendering the board
     }
 
-    method2() {
-        // method logic
+    displayPlayers() {
+        // Logic for displaying players
+    }
+
+    displayDice() {
+        // Logic for displaying dice
+    }
+
+    displayMessage(message) {
+        // Logic for displaying messages
     }
 }
 
-export default YourClassName;
+export default UI;
