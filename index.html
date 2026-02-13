@@ -1,476 +1,79 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎲 Monopoly Game 🎲</title>
+    <title>Monopoly</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 1200px;
-            width: 100%;
-        }
-
-        h1 {
-            text-align: center;
-            color: #667eea;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-        }
-
-        #mode-selection {
-            text-align: center;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        #mode-selection h2 {
-            font-size: 1.8em;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        #mode-selection button {
-            padding: 20px 40px;
-            font-size: 18px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-            color: white;
-        }
-
-        #mode-selection button:first-of-type {
-            background: #667eea;
-        }
-
-        #mode-selection button:first-of-type:hover {
-            background: #5568d3;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        #mode-selection button:last-of-type {
-            background: #48bb78;
-        }
-
-        #mode-selection button:last-of-type:hover {
-            background: #38a169;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
-        }
-
-        .game-container {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
-            display: none;
-        }
-
-        #game-board {
-            border: 3px solid #667eea;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            background: #2d5016;
-        }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .card h3 {
-            margin-bottom: 15px;
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-
-        .player {
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            background: white;
-            border-left: 4px solid #ccc;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .player.current {
-            background: #667eea;
-            color: white;
-            font-weight: bold;
-            border-left-color: #fff;
-            transform: scale(1.05);
-        }
-
-        .player strong {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        button.primary {
-            background: #667eea;
-            color: white;
-        }
-
-        button.primary:hover:not(:disabled) {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        button.secondary {
-            background: #48bb78;
-            color: white;
-        }
-
-        button.secondary:hover:not(:disabled) {
-            background: #38a169;
-            transform: translateY(-2px);
-        }
-
-        button:disabled {
-            background: #cbd5e0;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        #game-message {
-            padding: 15px;
-            background: #48bb78;
-            color: white;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 20px;
-            animation: slideIn 0.3s ease;
-            display: none;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .dice-display {
-            text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-size: 2.5em;
-        }
-
-        #session-info {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-            display: none;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        #turn-info {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            color: #667eea;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 1024px) {
-            .game-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 1.8em;
-            }
-
-            #game-board {
-                width: 100%;
-                height: auto;
-            }
-        }
+        body { font-family: Arial; background: #667eea; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 20px; text-align: center; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; border: none; border-radius: 8px; background: #667eea; color: white; }
+        button:hover { background: #5568d3; }
+        #start { text-align: center; }
+        #game { display: none; }
+        canvas { border: 3px solid #333; background: #2d5016; margin: 20px 0; }
+        #message { font-size: 18px; color: #667eea; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎲 Monopoly 🎲</h1>
         
-        <div id="mode-selection">
-            <h2>Spielmodus wählen</h2>
-            <button class="primary" onclick="startGame('offline')">🤖 Offline (vs KI)</button>
-            <button class="secondary" onclick="startGame('online')">🌐 Online (Multiplayer)</button>
+        <div id="start">
+            <button onclick="startGame()">🎮 Spiel starten</button>
         </div>
 
-        <div class="game-container" id="game-content">
-            <div id="session-info">
-                <strong>Session Code:</strong> <span id="session-code"></span>
-            </div>
-
-            <div id="game-message"></div>
-
-            <div>
-                <canvas id="game-board" width="800" height="800"></canvas>
-            </div>
-
-            <div class="sidebar">
-                <div id="turn-info" class="card">
-                    <h3>🎯 Am Zug</h3>
-                </div>
-
-                <div class="card">
-                    <h3>🎮 Spieler</h3>
-                    <div id="player-info"></div>
-                </div>
-
-                <div class="card">
-                    <h3>🎲 Würfel</h3>
-                    <div id="dice-result" class="dice-display">🎲</div>
-                </div>
-
-                <div class="card controls">
-                    <h3>Aktionen</h3>
-                    <button id="roll-btn" class="primary" onclick="rollDice()">🎲 Würfeln</button>
-                    <button id="buy-btn" class="secondary" onclick="buyProperty()" style="display: none;">💰 Kaufen</button>
-                    <button id="skip-buy-btn" class="primary" onclick="skipBuy()" style="display: none;">➡️ Nicht kaufen</button>
-                    <button id="end-turn-btn" class="primary" onclick="endTurn()">➡️ Zug beenden</button>
-                </div>
-            </div>
+        <div id="game">
+            <canvas id="board" width="600" height="600"></canvas>
+            <br>
+            <button onclick="rollDice()">🎲 Würfeln</button>
+            <button onclick="endTurn()">➡️ Zug beenden</button>
+            <p id="message">Willkommen!</p>
         </div>
     </div>
 
-    <script type="module">
-        import MonopolyGame from './src/game.js';
-        import UI from './src/ui.js';
+    <script>
+        let gameActive = false;
+        let players = [
+            {name: 'Spieler 1', position: 0, money: 1500},
+            {name: 'Spieler 2', position: 0, money: 1500}
+        ];
+        let currentPlayer = 0;
 
-        let game = null;
-        let ui = null;
-
-        window.startGame = function(mode) {
-            document.getElementById('mode-selection').style.display = 'none';
-            document.getElementById('game-content').style.display = 'grid';
-
-            if (mode === 'online') {
-                document.getElementById('session-info').style.display = 'block';
-                document.getElementById('session-code').textContent = generateSessionCode();
-            }
-
-            const playerNames = ['Spieler 1', 'Spieler 2'];
-            game = new MonopolyGame(playerNames, mode);
-            
-            ui = new UI('game-board');
-            ui.init();
-
-            updateGameUI();
-            showMessage(`Spiel im ${mode === 'offline' ? 'Offline' : 'Online'} Modus gestartet!`);
-        };
-
-        function generateSessionCode() {
-            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        function startGame() {
+            gameActive = true;
+            document.getElementById('start').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            drawBoard();
+            updateMessage(players[0].name + ' ist am Zug!');
         }
 
-        window.rollDice = function() {
-            if (!game) return;
-            
-            const result = game.rollDice();
-            if (result.error) {
-                showMessage(result.error, 'error');
-                return;
-            }
-
-            ui.updateDiceDisplay(result.die1, result.die2);
-            
-            if (result.isDouble) {
-                showMessage(`🎲 Pasch! ${result.die1} + ${result.die2} = ${result.total}!`);
-            } else {
-                showMessage(`Du hast ${result.total} gewürfelt!`);
-            }
-
-            setTimeout(() => {
-                movePlayer();
-            }, 1000);
-
-            disableButton('roll-btn');
-        };
-
-        function movePlayer() {
-            if (!game) return;
-            
-            const result = game.movePlayer();
-            const field = result.field;
-            
-            showMessage(`${result.playerName} ist auf ${field.name} gelandet!`);
-            
-            updateGameUI();
-
-            if (result.landResult) {
-                handleLandAction(result.landResult);
-            }
+        function drawBoard() {
+            const canvas = document.getElementById('board');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#2d5016';
+            ctx.fillRect(0, 0, 600, 600);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('MONOPOLY', 300, 300);
         }
 
-        function handleLandAction(landResult) {
-            const action = landResult.action;
+        function rollDice() {
+            const die1 = Math.floor(Math.random() * 6) + 1;
+            const die2 = Math.floor(Math.random() * 6) + 1;
+            const total = die1 + die2;
             
-            switch(action) {
-                case 'canBuy':
-                    showMessage(`${landResult.field.name} kann gekauft werden für ${landResult.price}€!`);
-                    ui.showButton('buy-btn', true);
-                    ui.showButton('skip-buy-btn', true);
-                    break;
-                
-                case 'payRent':
-                    showMessage(`Miete zahlen! ${landResult.rent}€ an ${landResult.ownerName}`, 'error');
-                    break;
-                
-                case 'payTax':
-                    showMessage(`Steuer zahlen! ${landResult.amount}€`, 'error');
-                    break;
-                
-                case 'chance':
-                    showMessage(`🃏 Ereignisfeld: ${landResult.card.text}`);
-                    break;
-                
-                case 'community':
-                    showMessage(`🏠 Gemeinschaftsfeld: ${landResult.card.text}`);
-                    break;
-                
-                case 'goToJail':
-                    showMessage(`Ab ins Gefängnis!`, 'error');
-                    break;
-                
-                default:
-                    break;
-            }
+            players[currentPlayer].position += total;
+            updateMessage(players[currentPlayer].name + ' würfelt: ' + total + ' (' + die1 + '+' + die2 + ')');
         }
 
-        window.buyProperty = function() {
-            if (!game) return;
-            
-            const result = game.buyProperty();
-            if (result.success) {
-                showMessage(result.message, 'success');
-                ui.showButton('buy-btn', false);
-                ui.showButton('skip-buy-btn', false);
-                endTurn();
-            } else {
-                showMessage(result.message, 'error');
-            }
-        };
-
-        window.skipBuy = function() {
-            if (!game) return;
-            
-            const result = game.skipBuy();
-            if (result.success) {
-                showMessage('Grundstück wird versteigert...');
-                ui.showButton('buy-btn', false);
-                ui.showButton('skip-buy-btn', false);
-                endTurn();
-            }
-        };
-
-        window.endTurn = function() {
-            if (!game) return;
-            
-            const result = game.endTurn();
-            
-            if (result.gameOver) {
-                showMessage(`🏆 ${result.winner} gewinnt!`, 'success');
-                return;
-            }
-            
-            updateGameUI();
-            enableButton('roll-btn');
-            
-            if (result.rollAgain) {
-                showMessage(`Pasch! ${result.nextPlayer} würfelt nochmal!`);
-            } else {
-                showMessage(`Zug an ${result.nextPlayer}!`);
-            }
-        };
-
-        function updateGameUI() {
-            const state = game.getGameState();
-            ui.renderGame(state);
-            ui.updateTurnInfo(state.players[state.currentPlayer].name);
+        function endTurn() {
+            currentPlayer = (currentPlayer + 1) % 2;
+            updateMessage(players[currentPlayer].name + ' ist jetzt am Zug!');
         }
 
-        function showMessage(message, type = 'info') {
-            ui.showMessage(message, type);
-        }
-
-        function enableButton(buttonId) {
-            ui.enableButton(buttonId, true);
-        }
-
-        function disableButton(buttonId) {
-            ui.enableButton(buttonId, false);
+        function updateMessage(msg) {
+            document.getElementById('message').textContent = msg;
         }
     </script>
 </body>
