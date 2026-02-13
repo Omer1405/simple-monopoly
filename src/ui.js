@@ -1,14 +1,11 @@
 class UI {
-    constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
-        this.context = this.canvas.getContext('2d');
-        this.players = [];
-        this.dice = [1, 1];
-        this.currentTurn = 0;
-        this.boardFields = this.createBoardFields();
-        this.render();
+    constructor(board, players, dice) {
+        this.board = board;
+        this.players = players;
+        this.dice = dice;
     }
 
+<<<<<<< HEAD
     createBoardFields() {
         const fields = [];
         for (let i = 0; i < 40; i++) {
@@ -20,23 +17,26 @@ class UI {
     addPlayer(tokenColor) {
         this.players.push({ color: tokenColor, position: 0 });
         this.renderPlayer({ color: tokenColor, position: 0 });
+=======
+    renderBoard() {
+        // Logic for rendering the board
+>>>>>>> fb910a613afb58813b9eab53e9a7a3e087452cfa
     }
 
-    updatePlayerInfo(playerIndex, newPosition) {
-        this.players[playerIndex].position = newPosition;
-        this.render();
+    displayPlayers() {
+        // Logic for displaying players
     }
 
-    rollDice() {
-        this.dice = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-        this.updateDiceDisplay();
-        this.nextTurn();
+    displayDice() {
+        // Logic for displaying dice
     }
 
-    updateDiceDisplay() {
-        // Display dice values
+    displayMessage(message) {
+        // Logic for displaying messages
     }
+}
 
+<<<<<<< HEAD
     showMessage(message) {
         // Show messages on UI
     }
@@ -91,3 +91,6 @@ class UI {
         // Enable or disable buttons based on game state
     }
 }
+=======
+export default UI;
+>>>>>>> fb910a613afb58813b9eab53e9a7a3e087452cfa
