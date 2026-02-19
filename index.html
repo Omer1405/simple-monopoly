@@ -29,11 +29,11 @@
         canvas { border: 3px solid #333; background: #2d5016; display: block; }
         #message { font-size: 16px; color: #667eea; font-weight: bold; margin-top: 15px; text-align: center; }
         
-        .dice-area { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; align-items: center; }
+        .dice-area { display: flex; gap: 20px; justify-content: center; margin-bottom: 10px; align-items: center; }
         .dice { width: 60px; height: 60px; background: white; border: 3px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; } 
         #diceResult { font-weight: bold; font-size: 18px; color: #667eea; min-width: 150px; }
         
-        .controls { text-align: center; margin-top: 20px; }
+        .controls { text-align: center; margin-top: 8px; }
         
         .players-list { list-style: none; }
         .player-item { padding: 12px; margin-bottom: 10px; background: white; border-radius: 6px; border-left: 4px solid; display: flex; align-items: center; gap: 10px; }
@@ -41,7 +41,68 @@
         .player-color { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #333; }
         .player-info { flex: 1; }
         .player-name { font-weight: bold; }
-        .player-money { font-size: 12px; color: #666; }
+        .player-money { font-size: 12px; color: #666; }        
+        /* Property Card Popup */
+        #propertyCard { display: none; position: absolute; background: white; border: 3px solid #333; border-radius: 8px; padding: 15px; width: 280px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100; font-size: 12px; }
+        .card-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #ccc; }
+        .card-price { margin: 5px 0; }
+        .card-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; }
+        .card-section-title { font-weight: bold; font-size: 11px; margin-bottom: 4px; }
+        .rent-table { width: 100%; font-size: 10px; }
+        .rent-table tr { border-bottom: 1px solid #f0f0f0; }
+        .rent-table td { padding: 3px; }
+        .rent-table td:first-child { font-weight: bold; width: 50%; }
+        .rent-table td:last-child { text-align: right; }
+        
+        /* Action Modal */
+        #actionModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .action-modal-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 12px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto; }
+        .action-modal-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .action-modal-subtitle { font-size: 16px; color: #666; margin-bottom: 20px; }
+        .action-field-info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea; }
+        .action-field-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+        .action-field-detail { font-size: 14px; color: #666; }
+        .action-buttons { display: grid; gap: 10px; margin-top: 20px; }
+        .action-btn { padding: 12px 20px; font-size: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .action-btn.buy { background: #28a745; color: white; }
+        .action-btn.buy:hover { background: #218838; transform: translateY(-2px); }
+        .action-btn.pay { background: #ff6b6b; color: white; }
+        .action-btn.pay:hover { background: #e63946; transform: translateY(-2px); }
+        .action-btn.build { background: #ffc107; color: #333; }
+        .action-btn.build:hover { background: #ffb300; transform: translateY(-2px); }
+        .action-btn.sell { background: #6c757d; color: white; }
+        .action-btn.sell:hover { background: #5a6268; transform: translateY(-2px); }
+        .action-btn.pass { background: #17a2b8; color: white; }
+        .action-btn.pass:hover { background: #138496; transform: translateY(-2px); }
+        .action-warning { background: #fff3cd; border: 1px solid #ffc107; padding: 12px; border-radius: 6px; margin-bottom: 15px; color: #856404; }
+        .action-owner-info { background: #e7f3ff; padding: 12px; border-radius: 6px; margin-bottom: 15px; color: #004085; border-left: 4px solid #0056b3; }
+        
+        /* Log Panel */
+        .log-panel { width: 300px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 2px solid #ddd; max-height: 300px; overflow-y: auto; font-size: 12px; margin-top: 15px; }
+        .log-panel h4 { margin-bottom: 10px; color: #333; }
+        .log-entry { padding: 8px; margin-bottom: 8px; background: white; border-left: 3px solid #667eea; border-radius: 4px; color: #666; }
+        .log-entry.purchase { border-left-color: #28a745; }
+        .log-entry.payment { border-left-color: #ff6b6b; }
+        .log-entry.trade { border-left-color: #ffc107; }
+        .log-entry.info { border-left-color: #17a2b8; }
+        
+        /* Player Info Popup */
+        #playerInfoPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .player-info-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 12px; padding: 30px; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto; }
+        .player-info-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+        .player-info-color { width: 50px; height: 50px; border-radius: 50%; border: 3px solid #333; }
+        .player-info-title { font-size: 24px; font-weight: bold; color: #333; }
+        .player-info-subtitle { font-size: 14px; color: #666; }
+        .player-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: #f5f5f5; padding: 15px; border-radius: 8px; }
+        .stat-label { font-size: 12px; color: #999; font-weight: bold; }
+        .stat-value { font-size: 20px; font-weight: bold; color: #333; margin-top: 5px; }
+        .properties-section { margin-top: 20px; }
+        .properties-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #333; }
+        .properties-list { display: grid; gap: 8px; }
+        .property-item { background: #f5f5f5; padding: 10px; border-radius: 6px; border-left: 4px solid #667eea; }
+        .property-name { font-weight: bold; color: #333; }
+        .property-detail { font-size: 11px; color: #666; margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -79,8 +140,25 @@
                         <p id="diceResult"></p>
                     </div>
                     <canvas id="board" width="800" height="800"></canvas>
+                    <div id="propertyCard"></div>
+                    <div id="actionModal">
+                        <div class="action-modal-content" id="actionModalContent"></div>
+                    </div>
+                    <div id="playerInfoPopup">
+                        <div class="player-info-content" id="playerInfoContent"></div>
+                    </div>
+                    <div id="diceContainer" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 500;">
+                        <div style="display: flex; gap: 15px; justify-content: center; align-items: center; background: rgba(255,255,255,0.95); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                            <div id="diceLarge1" style="width: 80px; height: 80px; background: white; border: 3px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: bold;">⚀</div>
+                            <span style="font-size: 24px; font-weight: bold; color: #333;">+</span>
+                            <div id="diceLarge2" style="width: 80px; height: 80px; background: white; border: 3px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: bold;">⚀</div>
+                            <span style="font-size: 24px; font-weight: bold; color: #333;">=</span>
+                            <div id="diceLargeSum" style="width: 80px; height: 80px; background: #667eea; color: white; border: 3px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold;">0</div>
+                        </div>
+                    </div>
                     <div class="controls">
                         <button onclick="rollDice()">🎲 Würfeln</button>
+                        <button onclick="openTradeMenuWithPlayers()" id="tradeButtonMain" style="display: none;">🤝 Handeln</button>
                         <button onclick="endTurn()">➡️ Zug beenden</button>
                     </div>
                     <p id="message">Willkommen!</p>
@@ -88,6 +166,10 @@
                 <div class="players-panel">
                     <h3>Spieler</h3>
                     <ul class="players-list" id="gamePlayersList"></ul>
+                    <div class="log-panel">
+                        <h4>📋 Spielprotokoll</h4>
+                        <div id="gameLog"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -109,6 +191,9 @@
         let players = [];
         let currentPlayer = 0;
         let selectedColor = availableColors[0];
+        let gameLog = [];
+        let diceRolledThisTurn = false;
+        let pendingTradeOffers = {}; // { toPlayerIdx: { from: fromIdx, offer: {properties, money}, request: {properties, money} } }
         
         // Color mapping for board
         const colorMap = {
@@ -168,7 +253,8 @@
                 name: name,
                 position: 0,
                 money: 1500,
-                color: selectedColor.hex
+                color: selectedColor.hex,
+                ownedProperties: []
             });
 
             nameInput.value = '';
@@ -210,6 +296,12 @@
             currentPlayer = 0;
             drawBoard();
             updateGameInfo();
+            
+            // Canvas Hover für Property Cards
+            const canvas = document.getElementById('board');
+            canvas.addEventListener('mousemove', handleCanvasHover);
+            canvas.addEventListener('mouseleave', hidePropertyCard);
+            canvas.addEventListener('click', handleCanvasClick);
         }
 
         function goBack() {
@@ -298,7 +390,7 @@
 
             // Text
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 10px Arial';
+            ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
@@ -390,14 +482,33 @@
         }
 
         function rollDice() {
+            if (diceRolledThisTurn) {
+                alert('Du hast bereits gewürfelt! Beende deinen Zug mit "Zug beenden"');
+                return;
+            }
+            
             const die1 = Math.floor(Math.random() * 6) + 1;
             const die2 = Math.floor(Math.random() * 6) + 1;
             const total = die1 + die2;
             
-            // Würfel anzeigen
+            // Würfel in Mittelpunkt anzeigen
+            const diceContainer = document.getElementById('diceContainer');
+            document.getElementById('diceLarge1').textContent = getDiceFace(die1);
+            document.getElementById('diceLarge2').textContent = getDiceFace(die2);
+            document.getElementById('diceLargeSum').textContent = total;
+            diceContainer.style.display = 'block';
+            
+            // Auch in der kleinen Anzeige
             document.getElementById('dice1').textContent = getDiceFace(die1);
             document.getElementById('dice2').textContent = getDiceFace(die2);
             document.getElementById('diceResult').textContent = `Summe: ${total}`;
+            
+            diceRolledThisTurn = true;
+            document.querySelector('button[onclick="rollDice()"]').disabled = true;
+            document.getElementById('tradeButtonMain').style.display = 'inline-block';
+            
+            // Log
+            addLog(`${players[currentPlayer].name} würfelt: ${die1} + ${die2} = ${total}`, 'info');
             
             // Spieler animiert bewegen
             animatePlayerMovement(currentPlayer, total);
@@ -427,7 +538,8 @@
                 } else {
                     player.position = endPos;
                     drawBoard();
-                    updateGameInfo(players[playerIndex].name + ' ist bei Feld ' + monopolyBoard[endPos].name + ' angekommen!');
+                    // Öffne Action Modal nach Zug
+                    showActionModal(playerIndex, endPos);
                 }
             }
             animate();
@@ -438,6 +550,11 @@
             document.getElementById('dice1').textContent = '⚀';
             document.getElementById('dice2').textContent = '⚀';
             document.getElementById('diceResult').textContent = '';
+            document.getElementById('diceContainer').style.display = 'none';
+            diceRolledThisTurn = false;
+            document.querySelector('button[onclick="rollDice()"]').disabled = false;
+            document.getElementById('tradeButtonMain').style.display = 'none';
+            addLog(`${players[currentPlayer].name} ist jetzt am Zug!`, 'info');
             updateGameInfo(players[currentPlayer].name + ' ist jetzt am Zug!');
         }
 
@@ -457,13 +574,898 @@
                 li.style.borderLeftColor = player.color;
                 li.innerHTML = `
                     <div class="player-color" style="background-color: ${player.color}"></div>
-                    <div class="player-info">
+                    <div class="player-info" style="flex: 1;">
                         <div class="player-name">${player.name}</div>
                         <div class="player-money">💰 ${player.money}€</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                            ${player.ownedProperties.length > 0 ? 
+                                '🏠 ' + player.ownedProperties.map(i => monopolyBoard[i].name.split('\\n')[0]).join(', ') 
+                                : '(keine Immobilien)'}
+                        </div>
                     </div>
                 `;
                 list.appendChild(li);
             });
+        }
+
+        function handleCanvasHover(e) {
+            const canvas = document.getElementById('board');
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const fieldIndex = getFieldAtPosition(x, y);
+            
+            if (fieldIndex !== -1 && (monopolyBoard[fieldIndex].type === 'property' || monopolyBoard[fieldIndex].type === 'railroad' || monopolyBoard[fieldIndex].type === 'utility')) {
+                showPropertyCard(fieldIndex, e.clientX, e.clientY);
+            } else {
+                hidePropertyCard();
+            }
+        }
+
+        function getFieldAtPosition(x, y) {
+            const size = 800;
+            const fieldSize = size / 11;
+            
+            // Bottom row (0-9)
+            if (y >= size - fieldSize && y < size) {
+                for (let i = 0; i < 10; i++) {
+                    const fieldX = size - (i + 1) * fieldSize;
+                    if (x >= fieldX && x < fieldX + fieldSize) return i;
+                }
+            }
+            
+            // Left column (11-19)
+            if (x >= 0 && x < fieldSize) {
+                for (let i = 11; i < 20; i++) {
+                    const fieldY = size - (i - 9) * fieldSize;
+                    if (y >= fieldY && y < fieldY + fieldSize) return i;
+                }
+            }
+            
+            // Top row (21-29)
+            if (y >= 0 && y < fieldSize) {
+                for (let i = 21; i < 30; i++) {
+                    const fieldX = (i - 20) * fieldSize;
+                    if (x >= fieldX && x < fieldX + fieldSize) return i;
+                }
+            }
+            
+            // Right column (31-39)
+            if (x >= size - fieldSize && x < size) {
+                for (let i = 31; i < 40; i++) {
+                    const fieldY = (i - 30) * fieldSize;
+                    if (y >= fieldY && y < fieldY + fieldSize) return i;
+                }
+            }
+            
+            return -1;
+        }
+
+        function showPropertyCard(fieldIndex, mouseX, mouseY) {
+            const field = monopolyBoard[fieldIndex];
+            const card = document.getElementById('propertyCard');
+            
+            let html = `<div class="card-title" style="background-color: ${colorMap[field.color] || '#FFF'}; color: #000; padding: 8px;">
+                ${field.name}
+            </div>`;
+            
+            if (field.price > 0) {
+                html += `<div class="card-price">💰 Kaufpreis: <strong>${field.price}€</strong></div>`;
+            }
+            if (field.type === 'tax') {
+                html += `<div class="card-price">💰 Steuer: <strong>${field.price}€</strong></div>`;
+            }
+            
+            if (field.type === 'property') {
+                html += `<div class="card-section">
+                    <div class="card-section-title">MIETE:</div>
+                    <table class="rent-table">
+                        <tr><td>Leere Straße:</td><td>${field.rent[0]}€</td></tr>
+                        <tr><td>1 Haus:</td><td>${field.rent[1]}€</td></tr>
+                        <tr><td>2 Häuser:</td><td>${field.rent[2]}€</td></tr>
+                        <tr><td>3 Häuser:</td><td>${field.rent[3]}€</td></tr>
+                        <tr><td>4 Häuser:</td><td>${field.rent[4]}€</td></tr>
+                        <tr><td>Volle Straße (Hotel):</td><td>${field.rent[5]}€</td></tr>
+                    </table>
+                </div>`;
+                
+                html += `<div class="card-section">
+                    <div class="card-section-title">KOSTEN:</div>
+                    <table class="rent-table">
+                        <tr><td>Ein Haus:</td><td>${field.price / 2}€</td></tr>
+                        <tr><td>Ein Hotel:</td><td>${field.price / 2}€</td></tr>
+                        <tr><td>Hypothek:</td><td>${field.price / 2}€</td></tr>
+                    </table>
+                </div>`;
+            } else if (field.type === 'railroad') {
+                html += `<div class="card-section">
+                    <div class="card-section-title">MIETE:</div>
+                    <table class="rent-table">
+                        <tr><td>1 Bahnhof:</td><td>25€</td></tr>
+                        <tr><td>2 Bahnhöfe:</td><td>50€</td></tr>
+                        <tr><td>3 Bahnhöfe:</td><td>100€</td></tr>
+                        <tr><td>4 Bahnhöfe:</td><td>200€</td></tr>
+                    </table>
+                </div>`;
+            } else if (field.type === 'utility') {
+                html += `<div class="card-section">
+                    <div class="card-section-title">MIETE:</div>
+                    <table class="rent-table">
+                        <tr><td>1 Werk:</td><td>Würfel × 4</td></tr>
+                        <tr><td>2 Werke:</td><td>Würfel × 10</td></tr>
+                    </table>
+                </div>`;
+            }
+            
+            card.innerHTML = html;
+            card.style.display = 'block';
+            card.style.left = Math.min(mouseX + 10, window.innerWidth - 300) + 'px';
+            card.style.top = (mouseY + 10) + 'px';
+        }
+
+        function hidePropertyCard() {
+            document.getElementById('propertyCard').style.display = 'none';
+        }
+
+        // ==================== SPIELMECHANIK ====================
+        
+        function showActionModal(playerIndex, fieldIndex) {
+            const player = players[playerIndex];
+            // FIX: Stelle sicher dass fieldIndex mit aktueller Position synchronisiert ist
+            const actualFieldIndex = players[playerIndex].position % 40;
+            fieldIndex = actualFieldIndex;
+            const field = monopolyBoard[fieldIndex];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title">${player.name}'s Zug</div>
+                <div class="action-modal-subtitle">Feld: ${field.name}</div>
+                <div class="action-field-info">
+                    <div class="action-field-header">${field.name}</div>
+                    <div class="action-field-detail">Feldtyp: ${getFieldTypeName(field.type)}</div>
+            `;
+            
+            if (field.type === 'property' || field.type === 'railroad' || field.type === 'utility') {
+                const owner = getFieldOwner(fieldIndex);
+                if (owner === null) {
+                    // Nicht gekauft
+                    html += `<div class="action-field-detail" style="margin-top: 10px; font-weight: bold; color: #28a745;">Kaufbar - ${field.price}€</div>`;
+                } else if (owner === playerIndex) {
+                    // Eigentum des Spielers
+                    html += `<div class="action-field-detail" style="margin-top: 10px; font-weight: bold; color: #007bff;">Dein Eigentum</div>`;
+                } else {
+                    // Gehört jemand anderem
+                    html += `<div class="action-field-detail" style="margin-top: 10px; font-weight: bold; color: #ff6b6b;">Gehört ${players[owner].name}</div>`;
+                }
+            }
+            
+            html += `</div>`;
+            
+            // Verschiedene Aktionen je nach Feldtyp
+            if (field.type === 'corner') {
+                html += getCornerFieldActions(fieldIndex);
+            } else if (field.type === 'property' || field.type === 'railroad' || field.type === 'utility') {
+                html += getPropertyActions(playerIndex, fieldIndex);
+            } else if (field.type === 'tax') {
+                html += getTaxActions(playerIndex, fieldIndex);
+            } else if (field.type === 'chance' || field.type === 'community') {
+                html += getChanceActions(playerIndex, fieldIndex);
+            } else {
+                html += `<div class="action-buttons">
+                    <button class="action-btn pass" onclick="closeActionModal()">Weiter</button>
+                </div>`;
+            }
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        function getFieldTypeName(type) {
+            const names = {
+                'property': 'Straße',
+                'railroad': 'Bahnhof',
+                'utility': 'Werk',
+                'corner': 'Spezialfeld',
+                'tax': 'Steuer',
+                'chance': 'Ereignis',
+                'community': 'Gemeinschaftsfeld'
+            };
+            return names[type] || type;
+        }
+        
+        function getFieldOwner(fieldIndex) {
+            for (let i = 0; i < players.length; i++) {
+                if (players[i].ownedProperties.includes(fieldIndex)) {
+                    return i;
+                }
+            }
+            return null;
+        }
+        
+        function getCornerFieldActions(fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            let html = `<div class="action-warning">${field.name}</div>`;
+            html += `<div class="action-buttons">
+                <button class="action-btn pass" onclick="closeActionModal()">Weiter</button>
+            </div>`;
+            return html;
+        }
+        
+        function getPropertyActions(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const owner = getFieldOwner(fieldIndex);
+            const player = players[playerIndex];
+            let html = `<div class="action-buttons">`;
+            
+            if (owner === null) {
+                // Feld ist zu verkaufen
+                if (player.money >= field.price) {
+                    html += `<button class="action-btn buy" onclick="buyProperty(${playerIndex}, ${fieldIndex})">
+                        🏠 Kaufen (${field.price}€)
+                    </button>`;
+                } else {
+                    html += `<div class="action-warning">❌ Zu wenig Geld zum Kaufen (du hast ${player.money}€, brauchst ${field.price}€)</div>`;
+                }
+            } else if (owner === playerIndex) {
+                // Eigentum des Spielers
+                html += `<button class="action-btn build" onclick="openBuildingMenu(${playerIndex}, ${fieldIndex})">
+                    🏗️ Bauen / Info anzeigen
+                </button>`;
+                html += `<button class="action-btn sell" onclick="openSellMenu(${playerIndex}, ${fieldIndex})">
+                    💰 Hypothek
+                </button>`;
+            } else {
+                // Gehört jemand anderem - Miete zahlen
+                const rentAmount = calculateRent(fieldIndex, owner);
+                if (player.money >= rentAmount) {
+                    html += `<div class="action-owner-info">💳 Miete an ${players[owner].name}: <strong>${rentAmount}€</strong></div>`;
+                    html += `<button class="action-btn pay" onclick="payRent(${playerIndex}, ${owner}, ${rentAmount}, ${fieldIndex})">
+                        💸 Miete zahlen
+                    </button>`;
+                } else {
+                    html += `<div class="action-warning">⚠️ Nicht genug Geld für Miete! (${rentAmount}€ erforderlich, du hast ${player.money}€)</div>`;
+                    html += `<button class="action-btn sell" onclick="openSellMenuForDebt(${playerIndex}, ${owner}, ${rentAmount})">
+                        🔄 Eigentum verkaufen
+                    </button>`;
+                }
+                html += `<button class="action-btn build" onclick="openTradeBuilder(${playerIndex}, ${owner})">
+                    🤝 Mit ${players[owner].name} handeln
+                </button>`;
+            }
+            
+            html += `<button class="action-btn pass" onclick="closeActionModal()">Abbrechen</button>`;
+            html += `</div>`;
+            return html;
+        }
+        
+        function getTaxActions(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const taxAmount = field.price;
+            let html = `<div class="action-warning">💰 Du musst ${taxAmount}€ Steuer zahlen!</div>`;
+            html += `<div class="action-buttons">`;
+            
+            if (player.money >= taxAmount) {
+                html += `<button class="action-btn pay" onclick="payTax(${playerIndex}, ${taxAmount})">
+                    💸 Steuer bezahlen (${taxAmount}€)
+                </button>`;
+            } else {
+                html += `<div class="action-warning">❌ Nicht genug Geld! (du hast ${player.money}€)</div>`;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+        
+        function getChanceActions(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            let html = `<div class="action-warning">🎲 ${field.name}</div>`;
+            html += `<div class="action-buttons">
+                <button class="action-btn pass" onclick="closeActionModal()">Weiter</button>
+            </div>`;
+            return html;
+        }
+        
+        function calculateRent(fieldIndex, ownerIndex) {
+            const field = monopolyBoard[fieldIndex];
+            
+            if (field.type === 'property') {
+                // Für Straßen: zuerst einfacher Mietpreis
+                return field.rent[0];
+            } else if (field.type === 'railroad' || field.type === 'utility') {
+                // Vereinfachte Berechnung
+                return field.type === 'railroad' ? 25 : 10;
+            }
+            
+            return 0;
+        }
+        
+        function buyProperty(playerIndex, fieldIndex) {
+            const player = players[playerIndex];
+            const field = monopolyBoard[fieldIndex];
+            
+            player.money -= field.price;
+            player.ownedProperties.push(fieldIndex);
+            
+            addLog(`${player.name} kauft ${field.name} für ${field.price}€`, 'purchase');
+            updateGameInfo(`${player.name} hat ${field.name} für ${field.price}€ gekauft!`);
+            closeActionModal();
+        }
+        
+        function payRent(playerIndex, ownerIndex, amount, fieldIndex) {
+            const player = players[playerIndex];
+            const owner = players[ownerIndex];
+            
+            player.money -= amount;
+            owner.money += amount;
+            
+            addLog(`${player.name} zahlt ${amount}€ Miete an ${owner.name}`, 'payment');
+            updateGameInfo(`${player.name} zahlt ${amount}€ Miete an ${owner.name}!`);
+            closeActionModal();
+        }
+        
+        function payTax(playerIndex, amount) {
+            const player = players[playerIndex];
+            player.money -= amount;
+            
+            addLog(`${player.name} zahlt ${amount}€ Steuer`, 'payment');
+            updateGameInfo(`${player.name} hat ${amount}€ Steuer gezahlt!`);
+            closeActionModal();
+        }
+        
+        function openBuildingMenu(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title">🏗️ ${field.name}</div>
+                <div class="action-field-info">
+                    <div class="action-field-header">Eigenschaft: ${player.name}</div>
+                    <div class="action-field-detail">Kaufpreis: ${field.price}€</div>
+                    <div class="action-field-detail">Hauskosten: ${field.price / 2}€</div>
+                    <div class="action-field-detail">Hotelkosten: ${field.price / 2}€</div>
+                    <div class="action-field-detail" style="margin-top: 10px;">
+                        <strong>Mietskala:</strong>
+                        <table class="rent-table" style="margin-top: 8px;">
+                            <tr><td>Leer:</td><td>${field.rent[0]}€</td></tr>
+                            <tr><td>1H:</td><td>${field.rent[1]}€</td></tr>
+                            <tr><td>2H:</td><td>${field.rent[2]}€</td></tr>
+                            <tr><td>3H:</td><td>${field.rent[3]}€</td></tr>
+                            <tr><td>4H:</td><td>${field.rent[4]}€</td></tr>
+                            <tr><td>Hotel:</td><td>${field.rent[5]}€</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn pass" onclick="showActionModal(${playerIndex}, ${fieldIndex})">Zurück</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        function openSellMenu(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const mortgageValue = field.price / 2;
+            const player = players[playerIndex];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title">💰 Hypothek</div>
+                <div class="action-field-info">
+                    <div class="action-field-header">${field.name}</div>
+                    <div class="action-field-detail">Hypothekwert: ${mortgageValue}€</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn sell" onclick="mortgageProperty(${playerIndex}, ${fieldIndex})">
+                        💸 Hypothek aufnehmen (${mortgageValue}€)
+                    </button>
+                    <button class="action-btn pass" onclick="showActionModal(${playerIndex}, ${fieldIndex})">Zurück</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        function openSellMenuForDebt(playerIndex, debtorIndex, amount) {
+            const player = players[playerIndex];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title">💰 Schuldenabbau</div>
+                <div class="action-warning">Du schuldest ${players[debtorIndex].name} ${amount}€</div>
+                <div class="action-field-info">
+                    <div class="action-field-header">Deine Immobilien:</div>
+            `;
+            
+            if (player.ownedProperties.length === 0) {
+                html += `<div class="action-field-detail">❌ Du hast keine Immobilien zu verkaufen!</div>`;
+            } else {
+                player.ownedProperties.forEach((propIdx, i) => {
+                    const prop = monopolyBoard[propIdx];
+                    const mortgageValue = prop.price / 2;
+                    html += `
+                        <div style="padding: 10px; background: #f5f5f5; margin: 5px 0; border-radius: 4px; cursor: pointer; border: 1px solid #ddd;">
+                            <div style="font-weight: bold;">${prop.name}</div>
+                            <div style="font-size: 12px; color: #666;">Hypothek: ${mortgageValue}€</div>
+                            <button class="action-btn sell" onclick="mortgageProperty(${playerIndex}, ${propIdx})" style="width: 100%; margin-top: 8px;">Hypothek aufnehmen</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn pass" onclick="closeActionModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        function mortgageProperty(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const mortgageValue = field.price / 2;
+            
+            player.money += mortgageValue;
+            const propIdx = player.ownedProperties.indexOf(fieldIndex);
+            if (propIdx > -1) {
+                player.ownedProperties.splice(propIdx, 1);
+            }
+            
+            addLog(`${player.name} nimmt Hypothek auf ${field.name} auf (+${mortgageValue}€)`, 'info');
+            updateGameInfo(`${player.name} nahm eine Hypothek auf ${field.name} auf (+${mortgageValue}€)`);
+            closeActionModal();
+        }
+        
+        function closeActionModal() {
+            document.getElementById('actionModal').style.display = 'none';
+            updateGamePlayersList();
+            drawBoard();
+        }
+        
+        // ==================== LOG SYSTEM ====================
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            gameLog.unshift({ message, type, timestamp });
+            if (gameLog.length > 20) gameLog.pop();
+            updateGameLog();
+        }
+        
+        function updateGameLog() {
+            const logDiv = document.getElementById('gameLog');
+            logDiv.innerHTML = gameLog.map((entry, idx) => `
+                <div class="log-entry ${entry.type}">
+                    <span style="font-size: 10px; color: #999;">${entry.timestamp}</span> ${entry.message}
+                </div>
+            `).join('');
+            logDiv.scrollTop = 0;
+        }
+        
+        // ==================== SPIELER-KLICK ====================
+        
+        function handleCanvasClick(e) {
+            const canvas = document.getElementById('board');
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const playerIdx = getPlayerAtPosition(x, y);
+            if (playerIdx !== -1) {
+                showPlayerInfo(playerIdx);
+            }
+        }
+        
+        function getPlayerAtPosition(x, y) {
+            const canvas = document.getElementById('board');
+            const fieldSize = canvas.width / 11;
+            
+            for (let i = 0; i < players.length; i++) {
+                const field = players[i].position % 40;
+                let posX, posY;
+
+                if (field < 10) {
+                    posX = canvas.width - (field + 1) * fieldSize + fieldSize / 2;
+                    posY = canvas.height - fieldSize / 4;
+                } else if (field < 20) {
+                    posX = fieldSize / 4;
+                    posY = canvas.height - (field - 9) * fieldSize + fieldSize / 2;
+                } else if (field < 30) {
+                    posX = (field - 19) * fieldSize + fieldSize / 2;
+                    posY = fieldSize / 4;
+                } else {
+                    posX = canvas.width - fieldSize / 4;
+                    posY = (field - 29) * fieldSize + fieldSize / 2;
+                }
+                
+                const distance = Math.sqrt((x - posX) ** 2 + (y - posY) ** 2);
+                if (distance < 20) return i;
+            }
+            return -1;
+        }
+        
+        function showPlayerInfo(playerIdx) {
+            const player = players[playerIdx];
+            const modal = document.getElementById('playerInfoPopup');
+            const content = document.getElementById('playerInfoContent');
+            
+            let html = `
+                <div class="player-info-header">
+                    <div class="player-info-color" style="background-color: ${player.color}"></div>
+                    <div>
+                        <div class="player-info-title">${player.name}</div>
+                        <div class="player-info-subtitle">Feld: ${monopolyBoard[player.position % 40].name}</div>
+                    </div>
+                </div>
+                
+                <div class="player-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Geld</div>
+                        <div class="stat-value">${player.money}€</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Immobilien</div>
+                        <div class="stat-value">${player.ownedProperties.length}</div>
+                    </div>
+                </div>
+                
+                <div class="properties-section">
+                    <div class="properties-title">🏠 Besitztümer:</div>
+            `;
+            
+            if (player.ownedProperties.length === 0) {
+                html += `<div style="color: #999; padding: 10px;">Keine Immobilien</div>`;
+            } else {
+                html += `<div class="properties-list">`;
+                player.ownedProperties.forEach(propIdx => {
+                    const prop = monopolyBoard[propIdx];
+                    html += `
+                        <div class="property-item">
+                            <div class="property-name" style="color: ${colorMap[prop.color] ? colorMap[prop.color] : '#333'}; padding: 3px 8px; background: ${colorMap[prop.color] ? colorMap[prop.color] : '#f5f5f5'}; border-radius: 3px; display: inline-block; color: white;">
+                                ${prop.name}
+                            </div>
+                            <div class="property-detail">Wert: ${prop.price}€</div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+            
+            html += `
+                </div>
+                <div class="action-buttons" style="margin-top: 20px;">
+                    <button class="action-btn pass" onclick="closePlayerInfo()">Schließen</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        function closePlayerInfo() {
+            document.getElementById('playerInfoPopup').style.display = 'none';
+        }
+        
+        // ==================== HANDELS-SYSTEM ====================
+        
+        function openTradeMenuWithPlayers() {
+            const player = players[currentPlayer];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title">🤝 Handel</div>
+                <div class="action-modal-subtitle">${player.name} sucht einen Handelspartner...</div>
+                <div class="action-buttons" style="max-height: 400px; overflow-y: auto;">
+            `;
+            
+            players.forEach((p, idx) => {
+                if (idx !== currentPlayer) {
+                    html += `
+                        <button class="action-btn build" onclick="openTradeBuilder(${currentPlayer}, ${idx})" style="text-align: left;">
+                            <div style="font-weight: bold;">${p.name}</div>
+                            <div style="font-size: 11px; margin-top: 3px;">💰 ${p.money}€ | 🏠 ${p.ownedProperties.length} Immobilien</div>
+                        </button>
+                    `;
+                }
+            });
+            
+            html += `
+                    <button class="action-btn pass" onclick="closeActionModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        function openTradeBuilder(fromIdx, toIdx) {
+            const fromPlayer = players[fromIdx];
+            const toPlayer = players[toIdx];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title">🤝 Handelsangebot an ${toPlayer.name}</div>
+                <div class="action-modal-subtitle">${fromPlayer.name} bietet an:</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border: 2px solid #2196F3;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #1565c0;">Was ${fromPlayer.name} bietet:</div>
+                        <div id="tradeOfferDisplay" style="min-height: 100px; background: white; padding: 10px; border-radius: 4px; color: #666; font-size: 12px;">
+                            <em>Nichts gewählt</em>
+                        </div>
+                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #1565c0; font-size: 12px;">Zu bieten:</div>
+                        <div style="display: grid; gap: 6px;">
+            `;
+            
+            if (fromPlayer.ownedProperties.length === 0) {
+                html += `<div style="color: #999; font-size: 11px;">Keine Immobilien</div>`;
+            } else {
+                fromPlayer.ownedProperties.forEach(propIdx => {
+                    const prop = monopolyBoard[propIdx];
+                    html += `
+                        <button class="action-btn" style="background: white; color: #333; border: 2px solid ${colorMap[prop.color] || '#ccc'}; text-align: left; padding: 8px;" onclick="toggleTradeItem(${fromIdx}, ${propIdx}, 'offer', '${fromPlayer.name}', '${toPlayer.name}')">
+                            <div style="font-weight: bold;">${prop.name}</div>
+                            <div style="font-size: 10px; color: #666;">${prop.price}€</div>
+                        </button>
+                    `;
+                });
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; border: 2px solid #9c27b0;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #6a1b9a;">Was ${toPlayer.name} bietet:</div>
+                        <div id="tradeRequestDisplay" style="min-height: 100px; background: white; padding: 10px; border-radius: 4px; color: #666; font-size: 12px;">
+                            <em>Nichts gewählt</em>
+                        </div>
+                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #6a1b9a; font-size: 12px;">Zur Verfügung stehen:</div>
+                        <div style="display: grid; gap: 6px;">
+            `;
+            
+            if (toPlayer.ownedProperties.length === 0) {
+                html += `<div style="color: #999; font-size: 11px;">Keine Immobilien</div>`;
+            } else {
+                toPlayer.ownedProperties.forEach(propIdx => {
+                    const prop = monopolyBoard[propIdx];
+                    html += `
+                        <button class="action-btn" style="background: white; color: #333; border: 2px solid ${colorMap[prop.color] || '#ccc'}; text-align: left; padding: 8px;" onclick="toggleTradeItem(${toIdx}, ${propIdx}, 'request', '${fromPlayer.name}', '${toPlayer.name}')">
+                            <div style="font-weight: bold;">${prop.name}</div>
+                            <div style="font-size: 10px; color: #666;">${prop.price}€</div>
+                        </button>
+                    `;
+                });
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn build" onclick="sendTradeOffer(${fromIdx}, ${toIdx})">
+                        ✉️ Angebot senden
+                    </button>
+                    <button class="action-btn pass" onclick="openTradeMenuWithPlayers()">Zurück</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        let currentTradeBuilder = { offer: { properties: [] }, request: { properties: [] } };
+        
+        function toggleTradeItem(playerIdx, propIdx, direction, fromName, toName) {
+            if (direction === 'offer') {
+                const idx = currentTradeBuilder.offer.properties.indexOf(propIdx);
+                if (idx > -1) {
+                    currentTradeBuilder.offer.properties.splice(idx, 1);
+                } else {
+                    currentTradeBuilder.offer.properties.push(propIdx);
+                }
+            } else {
+                const idx = currentTradeBuilder.request.properties.indexOf(propIdx);
+                if (idx > -1) {
+                    currentTradeBuilder.request.properties.splice(idx, 1);
+                } else {
+                    currentTradeBuilder.request.properties.push(propIdx);
+                }
+            }
+            updateTradeBuilderDisplay(fromName, toName);
+        }
+        
+        function updateTradeBuilderDisplay(fromName, toName) {
+            const offerDisplay = document.getElementById('tradeOfferDisplay');
+            const requestDisplay = document.getElementById('tradeRequestDisplay');
+            
+            if (currentTradeBuilder.offer.properties.length === 0) {
+                offerDisplay.innerHTML = '<em>Nichts gewählt</em>';
+            } else {
+                offerDisplay.innerHTML = currentTradeBuilder.offer.properties.map(p => 
+                    `<div style="background: #f5f5f5; padding: 6px; border-radius: 3px; margin: 3px 0;">✓ ${monopolyBoard[p].name}</div>`
+                ).join('');
+            }
+            
+            if (currentTradeBuilder.request.properties.length === 0) {
+                requestDisplay.innerHTML = '<em>Nichts gewählt</em>';
+            } else {
+                requestDisplay.innerHTML = currentTradeBuilder.request.properties.map(p => 
+                    `<div style="background: #f5f5f5; padding: 6px; border-radius: 3px; margin: 3px 0;">✓ ${monopolyBoard[p].name}</div>`
+                ).join('');
+            }
+        }
+        
+        function sendTradeOffer(fromIdx, toIdx) {
+            if (currentTradeBuilder.offer.properties.length === 0 && currentTradeBuilder.request.properties.length === 0) {
+                alert('Wähle mindestens eine Immobilie aus!');
+                return;
+            }
+            
+            // Speichere das Angebot für den anderen Spieler
+            pendingTradeOffers[toIdx] = {
+                from: fromIdx,
+                offer: { properties: [...currentTradeBuilder.offer.properties] },
+                request: { properties: [...currentTradeBuilder.request.properties] }
+            };
+            
+            addLog(`${players[fromIdx].name} sendet Handelsangebot an ${players[toIdx].name}`, 'trade');
+            
+            currentTradeBuilder = { offer: { properties: [] }, request: { properties: [] } };
+            
+            // Zeige sofort das Antwort-Modal für Spieler 2 an
+            showTradeOfferResponseModal(toIdx);
+        }
+        
+        function showTradeOfferResponseModal(toIdx) {
+            if (!pendingTradeOffers[toIdx]) return;
+            
+            const offer = pendingTradeOffers[toIdx];
+            const fromPlayer = players[offer.from];
+            const toPlayer = players[toIdx];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let html = `
+                <div class="action-modal-title" style="color: #d32f2f;">📬 Handelsangebot von ${fromPlayer.name}!</div>
+                <div class="action-modal-subtitle">${toPlayer.name}, was sagst du dazu?</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #1565c0;">${fromPlayer.name} bietet:</div>
+                        <div style="background: white; padding: 10px; border-radius: 4px;">
+            `;
+            
+            if (offer.offer.properties.length === 0) {
+                html += `<em style="color: #999;">Nichts</em>`;
+            } else {
+                html += offer.offer.properties.map(p => 
+                    `<div style="padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">✓ ${monopolyBoard[p].name}</div>`
+                ).join('');
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #6a1b9a;">Du gibst dafür:</div>
+                        <div style="background: white; padding: 10px; border-radius: 4px;">
+            `;
+            
+            if (offer.request.properties.length === 0) {
+                html += `<em style="color: #999;">Nichts</em>`;
+            } else {
+                html += offer.request.properties.map(p => 
+                    `<div style="padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">✓ ${monopolyBoard[p].name}</div>`
+                ).join('');
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn buy" onclick="acceptTradeOffer(${toIdx})">
+                        ✅ Akzeptieren
+                    </button>
+                    <button class="action-btn sell" onclick="rejectTradeOffer(${toIdx})">
+                        ❌ Ablehnen
+                    </button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        function acceptTradeOffer(toIdx) {
+            const offer = pendingTradeOffers[toIdx];
+            const fromPlayer = players[offer.from];
+            const toPlayer = players[toIdx];
+            
+            // Führe den Handel aus
+            offer.offer.properties.forEach(propIdx => {
+                const idx = fromPlayer.ownedProperties.indexOf(propIdx);
+                if (idx > -1) {
+                    fromPlayer.ownedProperties.splice(idx, 1);
+                    toPlayer.ownedProperties.push(propIdx);
+                }
+            });
+            
+            offer.request.properties.forEach(propIdx => {
+                const idx = toPlayer.ownedProperties.indexOf(propIdx);
+                if (idx > -1) {
+                    toPlayer.ownedProperties.splice(idx, 1);
+                    fromPlayer.ownedProperties.push(propIdx);
+                }
+            });
+            
+            addLog(`${fromPlayer.name} und ${toPlayer.name} einigen sich auf einen Handel`, 'trade');
+            delete pendingTradeOffers[toIdx];
+            
+            updateGamePlayersList();
+            drawBoard();
+            showTradeResultModal(toIdx, 'accepted');
+        }
+        
+        function rejectTradeOffer(toIdx) {
+            const offer = pendingTradeOffers[toIdx];
+            addLog(`${players[toIdx].name} lehnt Handelsangebot ab`, 'trade');
+            delete pendingTradeOffers[toIdx];
+            showTradeResultModal(toIdx, 'rejected');
+        }
+        
+        function showTradeResultModal(toIdx, result) {
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            const fromPlayer = players[currentPlayer]; // Der Spieler der das Angebot gemacht hat
+            const toPlayer = players[toIdx];
+            
+            let html = '';
+            if (result === 'accepted') {
+                html = `
+                    <div class="action-modal-title" style="color: #28a745;">✅ Handel akzeptiert!</div>
+                    <div class="action-modal-subtitle">${toPlayer.name} hat zugestimmt</div>
+                    <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                        <div style="font-size: 14px; color: #155724;">Der Handel wurde erfolgreich durchgeführt!</div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="action-modal-title" style="color: #dc3545;">❌ Handel abgelehnt</div>
+                    <div class="action-modal-subtitle">${toPlayer.name} hat abgelehnt</div>
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                        <div style="font-size: 14px; color: #721c24;">Das Angebot wurde nicht akzeptiert</div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="action-buttons">
+                    <button class="action-btn pass" onclick="closeActionModal()">
+                        👉 Weiter zu deinem Zug
+                    </button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        function makeCounterOffer(toIdx) {
+            alert('Gegenangebot-Funktionalität kommt bald! Für jetzt: Ablehnen und selbst ein Angebot machen.');
         }
     </script>
 </body>
