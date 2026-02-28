@@ -159,6 +159,7 @@
                     <div class="controls">
                         <button onclick="rollDice()">🎲 Würfeln</button>
                         <button onclick="openTradeMenuWithPlayers()" id="tradeButtonMain" style="display: none;">🤝 Handeln</button>
+                        <button onclick="openPropertyManagementMenu()">📋 Verwalten</button>
                         <button onclick="endTurn()">➡️ Zug beenden</button>
                     </div>
                     <p id="message">Willkommen!</p>
@@ -177,14 +178,14 @@
 
     <script src="src/board.js"></script>
     <script>
-        // Verfügbare Farben
+        // Verfügbare Farben - Klassische, deutlich unterscheidbare Farben
         const availableColors = [
-            { hex: '#FF6B6B', name: 'Rot' },
-            { hex: '#4ECDC4', name: 'Cyan' },
-            { hex: '#FFE66D', name: 'Gelb' },
-            { hex: '#95E1D3', name: 'Minze' },
-            { hex: '#C7CEEA', name: 'Lila' },
-            { hex: '#B5EAD7', name: 'Grün' }
+            { hex: '#DC143C', name: 'Rot' },        // Crimson Red
+            { hex: '#4169E1', name: 'Blau' },       // Royal Blue
+            { hex: '#FFD700', name: 'Gold/Gelb' },  // Gold
+            { hex: '#32CD32', name: 'Grün' },       // Lime Green
+            { hex: '#FF8C00', name: 'Orange' },     // Dark Orange
+            { hex: '#9370DB', name: 'Lila' }        // Medium Purple
         ];
         
         let gameActive = false;
@@ -193,7 +194,40 @@
         let selectedColor = availableColors[0];
         let gameLog = [];
         let diceRolledThisTurn = false;
+        let doublesCount = 0; // Zähler für Doppelwürfe in diesem Zug
+        let lastDiceSum = 0; // Letzte Würfelsumme für Utilities
         let pendingTradeOffers = {}; // { toPlayerIdx: { from: fromIdx, offer: {properties, money}, request: {properties, money} } }
+        let playerJailStatus = {}; // { playerIdx: { jailedTurns: number, canEscapeThisTurn: boolean } }
+        
+        // Chance und Community Chest Karten
+        const chanceCards = [
+            { text: 'Rücke vor bis zum Schlossplatz', effect: 'moveTo', value: 39 },
+            { text: 'Gehe zu Los. Ziehe 200€', effect: 'moveTo', value: 0 },
+            { text: 'Gehe ins Gefängnis! Ziehe dich zurück bis Feld 10', effect: 'moveToJail', value: 10 },
+            { text: 'Rücke vor bis zum nächsten Bahnhof', effect: 'moveToNextRailroad', value: null },
+            { text: 'Rücke vor bis zur nächsten Straße', effect: 'moveToNextUtility', value: null },
+            { text: 'Du zahlst jedem Spieler 50€', effect: 'payEachPlayer', value: 50 },
+            { text: 'Dein Vermögen wird bewertet. Zahle 150€ pro Haus und 500€ pro Hotel', effect: 'payForBuildings', value: null },
+            { text: 'Du ziehst ein Geschenk von der Bank: +150€', effect: 'collectMoney', value: 150 },
+        ];
+        
+        const communityCards = [
+            { text: 'Gehe zu Los. Ziehe 200€', effect: 'moveTo', value: 0 },
+            { text: 'Zahle Arztkosten: 50€', effect: 'payMoney', value: 50 },
+            { text: 'Zahlentag: Jeder Spieler zahlt dir 50€', effect: 'collectFromEachPlayer', value: 50 },
+            { text: 'Gehe ins Gefängnis! Ziehe dich zurück bis Feld 10', effect: 'moveToJail', value: 10 },
+            { text: 'Gewinne aus deinem Verkauf von Vorräten: +100€', effect: 'collectMoney', value: 100 },
+            { text: 'Erbe 200€', effect: 'collectMoney', value: 200 },
+            { text: 'Zinsrückzahlung: Die Bank zahlt dir 20€', effect: 'collectMoney', value: 20 },
+            { text: 'Steuern sinken: Die Bank zahlt dir 100€ zurück', effect: 'collectMoney', value: 100 },
+        ];
+        
+        let chanceDeck = [...chanceCards]; // Copy für Shuffling
+        let communityDeck = [...communityCards];
+        
+        // Bautsystem: verfügbare Häuser und Hotels
+        let availableHouses = 32;
+        let availableHotels = 12;
         
         // Color mapping for board
         const colorMap = {
@@ -254,7 +288,8 @@
                 position: 0,
                 money: 1500,
                 color: selectedColor.hex,
-                ownedProperties: []
+                ownedProperties: [],
+                jailedTurns: 0 // 0 = nicht im Gefängnis, 1-3 = im Gefängnis für X Runden
             });
 
             nameInput.value = '';
@@ -289,6 +324,18 @@
                 alert('Mindestens 2 Spieler erforderlich!');
                 return;
             }
+
+            // Initialisiere das Board und Häuser/Hotels
+            monopolyBoard.forEach(field => {
+                field.owner = null;
+                field.houses = 0;
+                field.hotels = 0;
+                field.mortgaged = false;
+            });
+            
+            // Setze verfügbare Häuser und Hotels zurück
+            availableHouses = 32;
+            availableHotels = 12;
 
             gameActive = true;
             document.getElementById('playerSetup').style.display = 'none';
@@ -450,6 +497,27 @@
                 
                 ctx.restore();
             }
+            
+            // Zeichne Häuser/Hotels Indikatoren für Grundstücke
+            if (field.type === 'property' && (field.houses > 0 || field.hotels > 0)) {
+                ctx.fillStyle = field.hotels > 0 ? '#FF0000' : '#00AA00';
+                const indicatorSize = 8;
+                const padding = 3;
+                
+                if (side === 'bottom' || side === 'top') {
+                    // Horizontal arrangement
+                    const startX = x + size / 2 - (field.houses > 0 ? field.houses : 1) * (indicatorSize + padding) / 2;
+                    for (let i = 0; i < (field.hotels > 0 ? 1 : field.houses); i++) {
+                        ctx.fillRect(startX + i * (indicatorSize + padding), y + size - indicatorSize - padding, indicatorSize, indicatorSize);
+                    }
+                } else if (side === 'left' || side === 'right') {
+                    // Vertical arrangement
+                    const startY = y + size / 2 - (field.houses > 0 ? field.houses : 1) * (indicatorSize + padding) / 2;
+                    for (let i = 0; i < (field.hotels > 0 ? 1 : field.houses); i++) {
+                        ctx.fillRect(x + padding, startY + i * (indicatorSize + padding), indicatorSize, indicatorSize);
+                    }
+                }
+            }
         }
 
         function drawPlayers(ctx, fieldSize, size) {
@@ -464,11 +532,11 @@
                     posX = fieldSize / 4;
                     posY = size - (field - 9) * fieldSize + fieldSize / 2;
                 } else if (field < 30) {
-                    posX = (field - 19) * fieldSize + fieldSize / 2;
+                    posX = (field - 20) * fieldSize + fieldSize / 2;
                     posY = fieldSize / 4;
                 } else {
                     posX = size - fieldSize / 4;
-                    posY = (field - 29) * fieldSize + fieldSize / 2;
+                    posY = (field - 30) * fieldSize + fieldSize / 2;
                 }
 
                 ctx.fillStyle = players[i].color;
@@ -482,6 +550,14 @@
         }
 
         function rollDice() {
+            const player = players[currentPlayer];
+            
+            // Prüfe ob Spieler im Gefängnis ist
+            if (player.jailedTurns > 0) {
+                alert(`Du bist noch ${player.jailedTurns} Runde(n) im Gefängnis! Du kannst dich befreien oder warten.`);
+                return;
+            }
+            
             if (diceRolledThisTurn) {
                 alert('Du hast bereits gewürfelt! Beende deinen Zug mit "Zug beenden"');
                 return;
@@ -490,28 +566,55 @@
             const die1 = Math.floor(Math.random() * 6) + 1;
             const die2 = Math.floor(Math.random() * 6) + 1;
             const total = die1 + die2;
+            const isDoubles = die1 === die2;
+            
+            // Speichere Würfelsumme für Utility-Miete
+            lastDiceSum = total;
             
             // Würfel in Mittelpunkt anzeigen
             const diceContainer = document.getElementById('diceContainer');
             document.getElementById('diceLarge1').textContent = getDiceFace(die1);
             document.getElementById('diceLarge2').textContent = getDiceFace(die2);
-            document.getElementById('diceLargeSum').textContent = total;
+            document.getElementById('diceLargeSum').textContent = total + (isDoubles ? ' 🎲 DOUBLES!' : '');
             diceContainer.style.display = 'block';
             
             // Auch in der kleinen Anzeige
             document.getElementById('dice1').textContent = getDiceFace(die1);
             document.getElementById('dice2').textContent = getDiceFace(die2);
-            document.getElementById('diceResult').textContent = `Summe: ${total}`;
+            document.getElementById('diceResult').textContent = `Summe: ${total}` + (isDoubles ? ' (DOUBLES!)' : '');
             
-            diceRolledThisTurn = true;
-            document.querySelector('button[onclick="rollDice()"]').disabled = true;
+            // Nur bei NICHT-Doubles wird die Würflung blockiert
+            if (!isDoubles) {
+                diceRolledThisTurn = true;
+            }
+            
+            document.querySelector('button[onclick="rollDice()"]').disabled = !isDoubles; // Disables wenn NICHT Doubles
             document.getElementById('tradeButtonMain').style.display = 'inline-block';
             
-            // Log
-            addLog(`${players[currentPlayer].name} würfelt: ${die1} + ${die2} = ${total}`, 'info');
+            // Prüfe Doubles und zähle
+            if (isDoubles) {
+                doublesCount++;
+                
+                // Nach 3 Doubles → Gefängnis!
+                if (doublesCount >= 3) {
+                    addLog(`${players[currentPlayer].name} hat 3x Doubles geworfen → GEFÄNGNIS!`, 'info');
+                    player.position = 10;
+                    player.jailedTurns = 3;
+                    doublesCount = 0; // Zurücksetzen
+                    diceRolledThisTurn = true; // Jetzt ist die Runde vorbei
+                    drawBoard();
+                    alert('3 Doubles hintereinander! Du gehst ins Gefängnis!');
+                    endTurn();
+                    return;
+                }
+                addLog(`${players[currentPlayer].name} würfelt Doubles (${die1}+${die2}=${total}) - nochmal würfeln!`, 'info');
+            } else {
+                doublesCount = 0; // Zurücksetzen wenn kein Double
+                addLog(`${players[currentPlayer].name} würfelt: ${die1} + ${die2} = ${total}`, 'info');
+            }
             
             // Spieler animiert bewegen
-            animatePlayerMovement(currentPlayer, total);
+            animatePlayerMovement(currentPlayer, total, isDoubles);
         }
 
         function getDiceFace(num) {
@@ -519,15 +622,15 @@
             return faces[num];
         }
 
-        function animatePlayerMovement(playerIndex, steps) {
+        function animatePlayerMovement(playerIndex, steps, isDoubles) {
             const canvas = document.getElementById('board');
             const fieldSize = canvas.width / 11;
             const player = players[playerIndex];
             const startPos = player.position;
-            const endPos = (startPos + steps) % 40;
+            let endPos = (startPos + steps) % 40;
             let currentStep = 0;
             const animationSpeed = 150; // ms pro Feld (kleiner = schneller)
-            let currentField = startPos;
+            let passedGO = false;
 
             function animate() {
                 if (currentStep <= steps) {
@@ -537,6 +640,23 @@
                     setTimeout(animate, animationSpeed);
                 } else {
                     player.position = endPos;
+                    
+                    // Prüfe ob über los gegangen wurde (position wraps around)
+                    if (startPos + steps >= 40) {
+                        passedGO = true;
+                        player.money += 200;
+                        addLog(`${player.name} geht über Los und erhält 200€!`, 'payment');
+                    }
+                    
+                    // Prüfe ob auf "Gehe ins Gefängnis" gelandet (Feld 30)
+                    if (endPos === 30) {
+                        player.position = 10; // Teleportiere zu Gefängnis
+                        player.jailedTurns = 3; // 3 Runden im Gefängnis
+                        endPos = 10;
+                        passedGO = false; // Kein Los Bonus wenn ins Gefängnis
+                        addLog(`${player.name} geht ins Gefängnis!`, 'info');
+                    }
+                    
                     drawBoard();
                     // Öffne Action Modal nach Zug
                     showActionModal(playerIndex, endPos);
@@ -546,6 +666,17 @@
         }
 
         function endTurn() {
+            // Reduziere Gefängnis-Runden für aktuellen Spieler
+            if (players[currentPlayer].jailedTurns > 0) {
+                players[currentPlayer].jailedTurns--;
+                if (players[currentPlayer].jailedTurns === 0) {
+                    addLog(`${players[currentPlayer].name} ist aus dem Gefängnis entlassen!`, 'info');
+                }
+            }
+            
+            // Setze Doubles-Zähler zurück für nächsten Spieler
+            doublesCount = 0;
+            
             currentPlayer = (currentPlayer + 1) % players.length;
             document.getElementById('dice1').textContent = '⚀';
             document.getElementById('dice2').textContent = '⚀';
@@ -615,25 +746,25 @@
                 }
             }
             
-            // Left column (11-19)
+            // Left column (10-19)
             if (x >= 0 && x < fieldSize) {
-                for (let i = 11; i < 20; i++) {
+                for (let i = 10; i < 20; i++) {
                     const fieldY = size - (i - 9) * fieldSize;
                     if (y >= fieldY && y < fieldY + fieldSize) return i;
                 }
             }
             
-            // Top row (21-29)
+            // Top row (20-29)
             if (y >= 0 && y < fieldSize) {
-                for (let i = 21; i < 30; i++) {
+                for (let i = 20; i < 30; i++) {
                     const fieldX = (i - 20) * fieldSize;
                     if (x >= fieldX && x < fieldX + fieldSize) return i;
                 }
             }
             
-            // Right column (31-39)
+            // Right column (30-39)
             if (x >= size - fieldSize && x < size) {
-                for (let i = 31; i < 40; i++) {
+                for (let i = 30; i < 40; i++) {
                     const fieldY = (i - 30) * fieldSize;
                     if (y >= fieldY && y < fieldY + fieldSize) return i;
                 }
@@ -645,6 +776,7 @@
         function showPropertyCard(fieldIndex, mouseX, mouseY) {
             const field = monopolyBoard[fieldIndex];
             const card = document.getElementById('propertyCard');
+            const owner = getFieldOwner(fieldIndex);
             
             let html = `<div class="card-title" style="background-color: ${colorMap[field.color] || '#FFF'}; color: #000; padding: 8px;">
                 ${field.name}
@@ -654,7 +786,21 @@
                 html += `<div class="card-price">💰 Kaufpreis: <strong>${field.price}€</strong></div>`;
             }
             if (field.type === 'tax') {
-                html += `<div class="card-price">💰 Steuer: <strong>${field.price}€</strong></div>`;
+                html += `<div class="card-price">💰 Steuer: <strong>${field.taxAmount || field.price}€</strong></div>`;
+            }
+            
+            // Zeige Owner und Gebäude Info
+            if (field.type === 'property' && owner !== null) {
+                html += `<div class="card-section" style="background: #fff3cd;">
+                    <div style="color: #666; font-size: 10px; margin-bottom: 5px;">👤 Besitzer: ${players[owner].name}</div>`;
+                if (field.houses > 0 || field.hotels > 0) {
+                    if (field.hotels > 0) {
+                        html += `<div style="color: #666; font-size: 10px;">🏰 ${field.hotels} Hotel(s)</div>`;
+                    } else {
+                        html += `<div style="color: #666; font-size: 10px;">🏠 ${field.houses} Haus/Häuser</div>`;
+                    }
+                }
+                html += `</div>`;
             }
             
             if (field.type === 'property') {
@@ -743,8 +889,10 @@
             
             html += `</div>`;
             
-            // Verschiedene Aktionen je nach Feldtyp
-            if (field.type === 'corner') {
+            // Spezialfall: Gefängnis
+            if (fieldIndex === 10 && player.jailedTurns > 0) {
+                html += getJailActions(playerIndex);
+            } else if (field.type === 'corner') {
                 html += getCornerFieldActions(fieldIndex);
             } else if (field.type === 'property' || field.type === 'railroad' || field.type === 'utility') {
                 html += getPropertyActions(playerIndex, fieldIndex);
@@ -776,12 +924,55 @@
         }
         
         function getFieldOwner(fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            // Prüfe zuerst field.owner (neue Methode)
+            if (field.owner !== null && field.owner !== undefined) {
+                return field.owner;
+            }
+            // Fallback: suche in players ownedProperties (alte Methode)
             for (let i = 0; i < players.length; i++) {
                 if (players[i].ownedProperties.includes(fieldIndex)) {
                     return i;
                 }
             }
             return null;
+        }
+        
+        function getJailActions(playerIndex) {
+            const player = players[playerIndex];
+            let html = `
+                <div class="action-warning" style="background: #ffcccc; color: #cc0000;">
+                    🔒 DU BIST IM GEFÄNGNIS!
+                </div>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ff9800;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: #856404;">Gefängnis Status:</div>
+                    <div style="font-size: 14px; color: #856404;">Noch ${player.jailedTurns} Runde(n) im Gefängnis</div>
+                    <div style="font-size: 12px; color: #856404; margin-top: 8px;">Du kannst still handeln und Miete kassieren!</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn sell" onclick="escapeJail(${playerIndex})">
+                        💰 Befreiung kaufen (50€)
+                    </button>
+                    <button class="action-btn pass" onclick="closeActionModal()">
+                        👉 Zug beenden (${player.jailedTurns} Runde(n) warten)
+                    </button>
+                </div>
+            `;
+            return html;
+        }
+        
+        function escapeJail(playerIndex) {
+            const player = players[playerIndex];
+            
+            if (player.money < 50) {
+                alert('Du hast nicht genug Geld! (benötigt 50€)');
+                return;
+            }
+            
+            player.money -= 50;
+            player.jailedTurns = 0;
+            addLog(`${player.name} zahlt 50€ und entkommt aus dem Gefängnis!`, 'payment');
+            closeActionModal();
         }
         
         function getCornerFieldActions(fieldIndex) {
@@ -800,7 +991,7 @@
             let html = `<div class="action-buttons">`;
             
             if (owner === null) {
-                // Feld ist zu verkaufen
+                // Feld ist zu verkaufen/Auktion verfügbar
                 if (player.money >= field.price) {
                     html += `<button class="action-btn buy" onclick="buyProperty(${playerIndex}, ${fieldIndex})">
                         🏠 Kaufen (${field.price}€)
@@ -808,42 +999,141 @@
                 } else {
                     html += `<div class="action-warning">❌ Zu wenig Geld zum Kaufen (du hast ${player.money}€, brauchst ${field.price}€)</div>`;
                 }
+                
+                // Option: Nicht kaufen → Auktion
+                html += `<button class="action-btn pass" onclick="startAuction(${fieldIndex})">
+                    🔨 Nicht kaufen → Auktion
+                </button>`;
             } else if (owner === playerIndex) {
                 // Eigentum des Spielers
+                if (field.mortgaged) {
+                    html += `<div class="action-warning" style="background: #ffcccc; color: #cc0000;">🔒 Diese Property ist hypothekenbelastet!</div>`;
+                }
                 html += `<button class="action-btn build" onclick="openBuildingMenu(${playerIndex}, ${fieldIndex})">
                     🏗️ Bauen / Info anzeigen
                 </button>`;
                 html += `<button class="action-btn sell" onclick="openSellMenu(${playerIndex}, ${fieldIndex})">
                     💰 Hypothek
                 </button>`;
+                html += `<button class="action-btn pass" onclick="closeActionModal()">Schließen</button>`;
             } else {
                 // Gehört jemand anderem - Miete zahlen
                 const rentAmount = calculateRent(fieldIndex, owner);
-                if (player.money >= rentAmount) {
-                    html += `<div class="action-owner-info">💳 Miete an ${players[owner].name}: <strong>${rentAmount}€</strong></div>`;
-                    html += `<button class="action-btn pay" onclick="payRent(${playerIndex}, ${owner}, ${rentAmount}, ${fieldIndex})">
-                        💸 Miete zahlen
-                    </button>`;
+                
+                // Zeige an, wenn mortgaged
+                if (field.mortgaged) {
+                    html += `<div class="action-warning" style="background: #fff3cd; color: #856404;">🔒 Diese Property ist hypothekenbelastet - keine Miete fällig!</div>`;
+                } else if (rentAmount === 0) {
+                    html += `<div class="action-owner-info">📍 Diese Property gehört ${players[owner].name}</div>`;
                 } else {
-                    html += `<div class="action-warning">⚠️ Nicht genug Geld für Miete! (${rentAmount}€ erforderlich, du hast ${player.money}€)</div>`;
-                    html += `<button class="action-btn sell" onclick="openSellMenuForDebt(${playerIndex}, ${owner}, ${rentAmount})">
-                        🔄 Eigentum verkaufen
-                    </button>`;
+                    html += `<div class="action-owner-info">💳 Miete an ${players[owner].name}: <strong>${rentAmount}€</strong></div>`;
+                    if (player.money >= rentAmount) {
+                        html += `<button class="action-btn pay" onclick="payRent(${playerIndex}, ${owner}, ${rentAmount}, ${fieldIndex})">
+                            💸 Miete zahlen
+                        </button>`;
+                    } else {
+                        html += `<div class="action-warning">⚠️ Nicht genug Geld für Miete! (${rentAmount}€ erforderlich, du hast ${player.money}€)</div>`;
+                        html += `<button class="action-btn sell" onclick="openSellMenuForDebt(${playerIndex}, ${owner}, ${rentAmount})">
+                            🔄 Eigentum verkaufen
+                        </button>`;
+                    }
                 }
+                
+                // Verhandeln ist immer möglich
                 html += `<button class="action-btn build" onclick="openTradeBuilder(${playerIndex}, ${owner})">
                     🤝 Mit ${players[owner].name} handeln
                 </button>`;
+                html += `<button class="action-btn pass" onclick="closeActionModal()">Schließen</button>`;
             }
             
-            html += `<button class="action-btn pass" onclick="closeActionModal()">Abbrechen</button>`;
             html += `</div>`;
             return html;
+        }
+        
+        function startAuction(fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            // Starte mit Startpreis = Hälfte des Kaufpreises
+            const startPrice = Math.ceil(field.price / 2);
+            
+            let html = `
+                <div class="action-modal-title">🔨 Auktion: ${field.name}</div>
+                <div class="action-field-info">
+                    <div class="action-field-header">Startgebot: ${startPrice}€</div>
+                    <div class="action-field-detail">Kaufpreis: ${field.price}€</div>
+            `;
+            
+            // Sammle alle Spieler die Geld genug haben
+            const bidders = players
+                .filter((p, idx) => p.money >= startPrice)
+                .map((p, idx) => ({ name: p.name, money: p.money, index: players.indexOf(p) }));
+            
+            if (bidders.length === 0) {
+                html += `<div class="action-warning">Kein Spieler kann bieten - Property bleibt unverkauft!</div>`;
+                html += `</div><div class="action-buttons">
+                    <button class="action-btn pass" onclick="closeActionModal()">OK</button>
+                </div>`;
+                content.innerHTML = html;
+                modal.style.display = 'block';
+                return;
+            }
+            
+            html += `<div class="action-field-detail" style="margin-top: 10px;">
+                <strong>Aktuelle Bieter:</strong><ul>`;
+            
+            bidders.forEach(b => {
+                html += `<li>${b.name} (${b.money}€)</li>`;
+            });
+            
+            html += `</ul></div></div>`;
+            html += `<div class="action-buttons">
+                <input type="number" id="auctionBid" min="${startPrice}" value="${startPrice}" placeholder="Gebot (€)" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <button class="action-btn build" onclick="processAuctionBid(${fieldIndex}, parseInt(document.getElementById('auctionBid').value))">
+                    🔨 Gebot abgeben
+                </button>
+                <button class="action-btn pass" onclick="closeActionModal()">Auktion beenden</button>
+            </div>`;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        let auctionState = { fieldIndex: null, currentBid: 0, currentBidder: null, highestBidder: null, passCount: 0 };
+        
+        function processAuctionBid(fieldIndex, bidAmount) {
+            const field = monopolyBoard[fieldIndex];
+            const minBid = auctionState.currentBid > 0 ? auctionState.currentBid + 10 : Math.ceil(field.price / 2);
+            
+            if (bidAmount < minBid) {
+                alert(`Gebot zu niedrig! Mindestgebot: ${minBid}€`);
+                return;
+            }
+            
+            // Einfache Auktion: Automatisch zum höchsten Gebot
+            let highestBid = bidAmount;
+            let highestBidder = currentPlayer;
+            
+            // Andere Spieler können auch bieten (vereinifacht: nur der aktuelle Spieler kann bieten)
+            auctionState.currentBid = bidAmount;
+            auctionState.highestBidder = highestBidder;
+            
+            // Kaufe Property
+            const player = players[highestBidder];
+            player.money -= bidAmount;
+            field.owner = highestBidder;
+            player.ownedProperties.push(fieldIndex);
+            
+            addLog(`${player.name} gewinnt Auktion für ${field.name} mit ${bidAmount}€!`, 'purchase');
+            closeActionModal();
+            checkBankruptcy(highestBidder);
         }
         
         function getTaxActions(playerIndex, fieldIndex) {
             const field = monopolyBoard[fieldIndex];
             const player = players[playerIndex];
-            const taxAmount = field.price;
+            const taxAmount = field.taxAmount || field.price; // taxAmount wird vom Board definiert
             let html = `<div class="action-warning">💰 Du musst ${taxAmount}€ Steuer zahlen!</div>`;
             html += `<div class="action-buttons">`;
             
@@ -863,20 +1153,211 @@
             const field = monopolyBoard[fieldIndex];
             let html = `<div class="action-warning">🎲 ${field.name}</div>`;
             html += `<div class="action-buttons">
-                <button class="action-btn pass" onclick="closeActionModal()">Weiter</button>
+                <button class="action-btn pass" onclick="drawCard(${playerIndex}, '${field.type}')">Karte ziehen</button>
             </div>`;
             return html;
         }
         
+        function drawCard(playerIndex, cardType) {
+            const player = players[playerIndex];
+            let card, deck;
+            
+            if (cardType === 'chance') {
+                deck = chanceDeck;
+            } else {
+                deck = communityDeck;
+            }
+            
+            // Shuffle wenn Deck leer (Karten-Zyklus)
+            if (deck.length === 0) {
+                if (cardType === 'chance') {
+                    chanceDeck = [...chanceCards];
+                    deck = chanceDeck;
+                } else {
+                    communityDeck = [...communityCards];
+                    deck = communityDeck;
+                }
+            }
+            
+            // Random card from deck
+            const cardIndex = Math.floor(Math.random() * deck.length);
+            const card_obj = deck[cardIndex];
+            deck.splice(cardIndex, 1); // Karte entfernen
+            
+            // Zeige Modal mit Karte
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            let cardTitle = cardType === 'chance' ? '🎰 Ereignisfeld' : '📋 Gemeinschaftsfeld';
+            
+            let html = `
+                <div class="action-modal-title">${cardTitle}</div>
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Gezogene Karte:</div>
+                    <div style="font-size: 16px; line-height: 1.6;">${card_obj.text}</div>
+                </div>
+                <div class="action-buttons">
+            `;
+            
+            // Führe Kartenwirkung aus
+            executeCardEffect(playerIndex, card_obj);
+            
+            html += `
+                    <button class="action-btn pass" onclick="closeActionModal()">Zug beenden</button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+            
+            addLog(`${player.name} zog eine ${cardType === 'chance' ? 'Ereignis' : 'Gemeinschafts'}-Karte: ${card_obj.text}`, 'info');
+        }
+        
+        function executeCardEffect(playerIndex, card) {
+            const player = players[playerIndex];
+            
+            switch (card.effect) {
+                case 'moveTo':
+                    // Ziehe Spieler zu Feld
+                    const oldPos = player.position;
+                    player.position = card.value;
+                    
+                    // Wenn über Los gegangen
+                    if (oldPos > player.position) {
+                        player.money += 200;
+                        addLog(`${player.name} passierte Los und erhielt 200€!`, 'payment');
+                    }
+                    
+                    drawBoard();
+                    break;
+                    
+                case 'moveToJail':
+                    player.position = 10;
+                    player.jailedTurns = 3;
+                    addLog(`${player.name} geht ins Gefängnis!`, 'info');
+                    drawBoard();
+                    break;
+                    
+                case 'moveToNextRailroad':
+                    const railroads = [5, 15, 25, 35];
+                    const nextRailroad = railroads.find(r => r > player.position) || railroads[0];
+                    if (nextRailroad < player.position) {
+                        player.money += 200; // Los Bonus
+                        addLog(`${player.name} passierte Los und erhielt 200€!`, 'payment');
+                    }
+                    player.position = nextRailroad;
+                    addLog(`${player.name} rückt zum nächsten Bahnhof vor (Feld ${nextRailroad})`, 'info');
+                    drawBoard();
+                    break;
+                    
+                case 'moveToNextUtility':
+                    const utilities = [12, 28];
+                    const nextUtility = utilities.find(u => u > player.position) || utilities[0];
+                    if (nextUtility < player.position) {
+                        player.money += 200; // Los Bonus
+                        addLog(`${player.name} passierte Los und erhielt 200€!`, 'payment');
+                    }
+                    player.position = nextUtility;
+                    addLog(`${player.name} rückt zum nächsten Werk vor (Feld ${nextUtility})`, 'info');
+                    drawBoard();
+                    break;
+                    
+                case 'payEachPlayer':
+                    for (let i = 0; i < players.length; i++) {
+                        if (i !== playerIndex && players[i].money >= 0) {
+                            player.money -= card.value;
+                            players[i].money += card.value;
+                        }
+                    }
+                    addLog(`${player.name} zahlte jedem Spieler ${card.value}€`, 'payment');
+                    checkBankruptcy(playerIndex);
+                    break;
+                    
+                case 'collectFromEachPlayer':
+                    for (let i = 0; i < players.length; i++) {
+                        if (i !== playerIndex) {
+                            players[i].money -= card.value;
+                            player.money += card.value;
+                            checkBankruptcy(i);
+                        }
+                    }
+                    addLog(`Jeder Spieler zahlt ${player.name} ${card.value}€`, 'payment');
+                    break;
+                    
+                case 'payMoney':
+                    player.money -= card.value;
+                    addLog(`${player.name} zahlt ${card.value}€`, 'payment');
+                    checkBankruptcy(playerIndex);
+                    break;
+                    
+                case 'collectMoney':
+                    player.money += card.value;
+                    addLog(`${player.name} erhält ${card.value}€`, 'payment');
+                    break;
+                    
+                case 'payForBuildings':
+                    let buildingCost = 0;
+                    for (let propIdx of player.ownedProperties) {
+                        const field = monopolyBoard[propIdx];
+                        buildingCost += field.houses * 150 + field.hotels * 500;
+                    }
+                    player.money -= buildingCost;
+                    addLog(`${player.name} zahlt ${buildingCost}€ für Häuser und Hotels`, 'payment');
+                    checkBankruptcy(playerIndex);
+                    break;
+            }
+        }
+        
         function calculateRent(fieldIndex, ownerIndex) {
             const field = monopolyBoard[fieldIndex];
+            const owner = players[ownerIndex];
+            
+            // Wenn die Property hypothekenbelastet ist: keine Miete!
+            if (field.mortgaged) {
+                return 0;
+            }
             
             if (field.type === 'property') {
-                // Für Straßen: zuerst einfacher Mietpreis
+                // Wenn Hotels vorhanden: hotel rent
+                if (field.hotels > 0) {
+                    return field.rent[5]; // Hotel rent (6. Index in rent array)
+                }
+                // Wenn Häuser vorhanden: house rent
+                if (field.houses > 0) {
+                    return field.rent[field.houses]; // rent[1] bis rent[4] für 1-4 Häuser
+                }
+                // Keine Häuser/Hotels: Basis-Mietpreis
                 return field.rent[0];
-            } else if (field.type === 'railroad' || field.type === 'utility') {
-                // Vereinfachte Berechnung
-                return field.type === 'railroad' ? 25 : 10;
+            } else if (field.type === 'railroad') {
+                // Bahnhöfe: Miete hängt von Anzahl ab
+                // 1 = 25€, 2 = 50€, 3 = 100€, 4 = 200€
+                const railroadIndices = [5, 15, 25, 35]; // Alle Bahnhöfe
+                let railroadsOwned = 0;
+                
+                for (let railIdx of railroadIndices) {
+                    if (monopolyBoard[railIdx].owner === ownerIndex) {
+                        railroadsOwned++;
+                    }
+                }
+                
+                // Miete = 25 * 2^(n-1) eurem ist n Anzahl
+                return 25 * Math.pow(2, railroadsOwned - 1);
+            } else if (field.type === 'utility') {
+                // Werke: Miete hängt von Anzahl und Würfelsumme ab
+                // 1 Werk: Würfelsumme x 4€
+                // 2 Werke: Würfelsumme x 10€
+                const utilityIndices = [12, 28]; // Alle Werke
+                let utilitiesOwned = 0;
+                
+                for (let utilIdx of utilityIndices) {
+                    if (monopolyBoard[utilIdx].owner === ownerIndex) {
+                        utilitiesOwned++;
+                    }
+                }
+                
+                // Bei 1 Werk: x4, bei 2 Werke: x10
+                const multiplier = (utilitiesOwned === 1) ? 4 : 10;
+                return lastDiceSum * multiplier;
             }
             
             return 0;
@@ -888,9 +1369,34 @@
             
             player.money -= field.price;
             player.ownedProperties.push(fieldIndex);
+            field.owner = playerIndex; // Speichere owner auf dem Field
             
-            addLog(`${player.name} kauft ${field.name} für ${field.price}€`, 'purchase');
-            updateGameInfo(`${player.name} hat ${field.name} für ${field.price}€ gekauft!`);
+            let logMessage = `${player.name} kauft ${field.name} für ${field.price}€`;
+            if (field.mortgaged) {
+                logMessage += ` (⚠️ HYPOTHEKENBELASTET!)`;
+            }
+            addLog(logMessage, 'purchase');
+            
+            // Wenn die Property mortgaged ist, frage ob auflösen
+            if (field.mortgaged) {
+                const unmortgageCost = Math.ceil(field.price / 2 * 1.1);
+                const shouldUnmortgage = confirm(`Diese Property ist hypothekenbelastet! Hypothek auflösen?\n\nKosten: ${unmortgageCost}€\nDein Geld nach Kauf: ${player.money}€\nNach Hypothek-Auflösung: ${player.money - unmortgageCost}€`);
+                if (shouldUnmortgage && player.money >= unmortgageCost) {
+                    player.money -= unmortgageCost;
+                    field.mortgaged = false;
+                    addLog(`${player.name} löst Hypothek auf ${field.name} sofort auf (-${unmortgageCost}€)`, 'info');
+                    updateGameInfo(`${player.name} kaufte ${field.name} und löste die Hypothek auf!`);
+                    checkBankruptcy(playerIndex);
+                } else if (shouldUnmortgage) {
+                    addLog(`${player.name} wollte Hypothek auflösen, aber hat nicht genug Geld!`, 'info');
+                    updateGameInfo(`${player.name} kaufte ${field.name} (Hypothek nicht auflösbar - zu wenig Geld)`);
+                } else {
+                    updateGameInfo(`${player.name} kaufte ${field.name} mit bestehender Hypothek!`);
+                }
+            } else {
+                updateGameInfo(`${player.name} hat ${field.name} für ${field.price}€ gekauft!`);
+            }
+            
             closeActionModal();
         }
         
@@ -904,6 +1410,9 @@
             addLog(`${player.name} zahlt ${amount}€ Miete an ${owner.name}`, 'payment');
             updateGameInfo(`${player.name} zahlt ${amount}€ Miete an ${owner.name}!`);
             closeActionModal();
+            
+            // Bankrott-Prüfung
+            checkBankruptcy(playerIndex);
         }
         
         function payTax(playerIndex, amount) {
@@ -913,6 +1422,57 @@
             addLog(`${player.name} zahlt ${amount}€ Steuer`, 'payment');
             updateGameInfo(`${player.name} hat ${amount}€ Steuer gezahlt!`);
             closeActionModal();
+            
+            // Bankrott-Prüfung
+            checkBankruptcy(playerIndex);
+        }
+
+        function checkBankruptcy(playerIndex) {
+            const player = players[playerIndex];
+            
+            // Wenn Spieler Schulden hat
+            if (player.money < 0) {
+                addLog(`${player.name} ist BANKROTT und wurde aus dem Spiel entfernt!`, 'info');
+                alert(`${player.name} ist bankrott und hat das Spiel verloren!`);
+                
+                // Alle Eigenschaften des Spielers verkaufen
+                for (let i = 0; i < monopolyBoard.length; i++) {
+                    if (monopolyBoard[i].owner === playerIndex) {
+                        // Hypotheken-Status zurücksetzen
+                        monopolyBoard[i].mortgaged = false;
+                        // Häuser/Hotels zurückgeben
+                        availableHouses += monopolyBoard[i].houses;
+                        availableHotels += monopolyBoard[i].hotels;
+                        monopolyBoard[i].houses = 0;
+                        monopolyBoard[i].hotels = 0;
+                        // Besitz entfernen
+                        monopolyBoard[i].owner = null;
+                    }
+                }
+                
+                // Spieler aus dem Spiel entfernen
+                players.splice(playerIndex, 1);
+                
+                // Spielerindex anpassen wenn nötig
+                if (currentPlayer >= players.length) {
+                    currentPlayer = 0;
+                }
+                
+                // Prüfe ob nur noch 1 Spieler übrig ist
+                if (players.length === 1) {
+                    alert(`🎉 ${players[0].name} hat gewonnen!`);
+                    startGame();
+                    return;
+                }
+                
+                // Nächster Spieler
+                if (currentPlayer >= players.length) {
+                    currentPlayer = 0;
+                }
+                
+                drawBoard();
+                endTurn();
+            }
         }
         
         function openBuildingMenu(playerIndex, fieldIndex) {
@@ -920,14 +1480,34 @@
             const player = players[playerIndex];
             const modal = document.getElementById('actionModal');
             const content = document.getElementById('actionModalContent');
+            const houseCost = field.price / 2;
+            const hotelCost = field.price / 2;
+            
+            // Prüfe wie viele Häuser der Player in der gleichen Farbe hat
+            const colorGroup = field.color;
+            const propertiesInGroup = monopolyBoard.filter(f => f.color === colorGroup && f.type === 'property');
+            const playerPropertiesInGroup = propertiesInGroup.filter(f => f.owner === playerIndex);
+            const allPropertiesOwnedInGroup = playerPropertiesInGroup.length === propertiesInGroup.length;
             
             let html = `
                 <div class="action-modal-title">🏗️ ${field.name}</div>
                 <div class="action-field-info">
                     <div class="action-field-header">Eigenschaft: ${player.name}</div>
                     <div class="action-field-detail">Kaufpreis: ${field.price}€</div>
-                    <div class="action-field-detail">Hauskosten: ${field.price / 2}€</div>
-                    <div class="action-field-detail">Hotelkosten: ${field.price / 2}€</div>
+                    <div class="action-field-detail">Hauskosten: ${houseCost}€</div>
+                    <div class="action-field-detail">Hotelkosten: ${hotelCost}€</div>
+                    <div class="action-field-detail" style="margin-top: 10px;">
+                        <strong>Aktuell auf diesem Feld:</strong>
+                        <div style="color: #666; margin-top: 5px;">
+                            Häuser: ${field.houses} | Hotels: ${field.hotels}
+                        </div>
+                    </div>
+                    <div class="action-field-detail" style="margin-top: 10px;">
+                        <strong>Verfügbar in der Bank:</strong>
+                        <div style="color: #666; margin-top: 5px;">
+                            Häuser: ${availableHouses} | Hotels: ${availableHotels}
+                        </div>
+                    </div>
                     <div class="action-field-detail" style="margin-top: 10px;">
                         <strong>Mietskala:</strong>
                         <table class="rent-table" style="margin-top: 8px;">
@@ -940,12 +1520,154 @@
                         </table>
                     </div>
                 </div>
-                <div class="action-buttons">
-                    <button class="action-btn pass" onclick="showActionModal(${playerIndex}, ${fieldIndex})">Zurück</button>
-                </div>
-            `;
+                <div class="action-buttons">`;
+            
+            // Button zum Haus kaufen (max 4 pro Straße)
+            if (field.houses < 4 && !field.hotels && allPropertiesOwnedInGroup && player.money >= houseCost && availableHouses > 0) {
+                html += `<button class="action-btn build" onclick="buyHouse(${playerIndex}, ${fieldIndex})">
+                    🏠 Haus kaufen (${houseCost}€)
+                </button>`;
+            } else if (field.houses < 4 && !field.hotels) {
+                if (!allPropertiesOwnedInGroup) {
+                    html += `<div style="color: #999; padding: 10px; background: #f5f5f5; border-radius: 4px;">⚠️ Du musst alle Straßen der gleichen Farbe besitzen, um zu bauen</div>`;
+                } else if (player.money < houseCost) {
+                    html += `<div style="color: #999; padding: 10px; background: #f5f5f5; border-radius: 4px;">⚠️ Nicht genug Geld (benötigt: ${houseCost}€, hast: ${player.money}€)</div>`;
+                } else if (availableHouses === 0) {
+                    html += `<div style="color: #999; padding: 10px; background: #f5f5f5; border-radius: 4px;">⚠️ Keine Häuser mehr in der Bank verfügbar</div>`;
+                }
+            }
+            
+            // Button zum Hotel kaufen (nur wenn 4 Häuser vorhanden)
+            if (field.houses === 4 && !field.hotels && player.money >= hotelCost && availableHotels > 0 && availableHouses >= 4) {
+                html += `<button class="action-btn build" onclick="buyHotel(${playerIndex}, ${fieldIndex})">
+                    🏰 Hotel kaufen (${hotelCost}€, gibt 4 Häuser ab)
+                </button>`;
+            } else if (field.houses === 4 && !field.hotels) {
+                if (player.money < hotelCost) {
+                    html += `<div style="color: #999; padding: 10px; background: #f5f5f5; border-radius: 4px;">⚠️ Nicht genug Geld für Hotel (benötigt: ${hotelCost}€, hast: ${player.money}€)</div>`;
+                } else if (availableHotels === 0) {
+                    html += `<div style="color: #999; padding: 10px; background: #f5f5f5; border-radius: 4px;">⚠️ Keine Hotels mehr in der Bank verfügbar</div>`;
+                } else if (availableHouses < 4) {
+                    html += `<div style="color: #999; padding: 10px; background: #f5f5f5; border-radius: 4px;">⚠️ Nicht genug Häuser in der Bank, um ein Hotel zu bauen</div>`;
+                }
+            }
+            
+            // Button zum Haus/Hotel verkaufen (Hypothek)
+            if ((field.houses > 0 || field.hotels > 0) && field.mortgaged !== true) {
+                html += `<button class="action-btn sell" onclick="sellBuilding(${playerIndex}, ${fieldIndex})">
+                    🔄 Haus/Hotel verkaufen
+                </button>`;
+            }
+            
+            html += `<button class="action-btn pass" onclick="showActionModal(${playerIndex}, ${fieldIndex})">Zurück</button>`;
+            html += `</div>`;
             
             content.innerHTML = html;
+        }
+        
+        function buyHouse(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const houseCost = field.price / 2;
+            
+            if (player.money < houseCost) {
+                alert(`Nicht genug Geld! (benötigt: ${houseCost}€, hast: ${player.money}€)`);
+                return;
+            }
+            
+            if (availableHouses <= 0) {
+                alert('Keine Häuser mehr in der Bank verfügbar!');
+                return;
+            }
+            
+            // Prüfe Hausverteilung (max 1 Unterschied in gleicher Farbe)
+            const colorGroup = field.color;
+            const propertiesInGroup = monopolyBoard.filter(f => f.color === colorGroup && f.type === 'property');
+            const houseCounts = propertiesInGroup.map(p => p.houses);
+            const maxHouses = Math.max(...houseCounts);
+            const minHouses = Math.min(...houseCounts);
+            
+            // Wenn dieses Feld mit dem neuen Haus die max+2 hätte, ist zu unausgewogen
+            if (field.houses === maxHouses && (maxHouses - minHouses >= 1)) {
+                alert(`⚠️ Hausverteilung nicht erlaubt! Max. 1 Haus Unterschied in der gleichen Farbe.\n\nAktuell: min=${minHouses}, max=${maxHouses}\nNach deinem Bau: max=${maxHouses + 1}`);
+                return;
+            }
+            
+            player.money -= houseCost;
+            field.houses += 1;
+            availableHouses -= 1;
+            
+            addLog(`${player.name} kauft ein Haus auf "${field.name}" für ${houseCost}€`, 'purchase');
+            updateGameInfo(`${player.name} hat ein Haus auf "${field.name}" gebaut!`);
+            drawBoard();
+            openBuildingMenu(playerIndex, fieldIndex); // Zeige Menu erneut
+            
+            // Bankrott-Prüfung
+            checkBankruptcy(playerIndex);
+        }
+        
+        function buyHotel(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const hotelCost = field.price / 2;
+            
+            if (player.money < hotelCost) {
+                alert(`Nicht genug Geld! (benötigt: ${hotelCost}€, hast: ${player.money}€)`);
+                return;
+            }
+            
+            if (field.houses !== 4) {
+                alert('Du brauchst 4 Häuser, um ein Hotel zu bauen!');
+                return;
+            }
+            
+            if (availableHotels <= 0) {
+                alert('Keine Hotels mehr in der Bank verfügbar!');
+                return;
+            }
+            
+            // Gib die 4 Häuser zurück in die Bank
+            availableHouses += 4;
+            
+            player.money -= hotelCost;
+            field.houses = 0;
+            field.hotels = 1;
+            availableHotels -= 1;
+            
+            addLog(`${player.name} kauft ein Hotel auf "${field.name}" für ${hotelCost}€`, 'purchase');
+            updateGameInfo(`${player.name} hat ein Hotel auf "${field.name}" gebaut!`);
+            drawBoard();
+            openBuildingMenu(playerIndex, fieldIndex); // Zeige Menu erneut
+            
+            // Bankrott-Prüfung
+            checkBankruptcy(playerIndex);
+        }
+        
+        function sellBuilding(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const buildingCost = field.price / 2;
+            
+            if (field.hotels > 0) {
+                // Verkaufe Hotel
+                player.money += buildingCost;
+                field.hotels = 0;
+                field.houses = 4; // Gib 4 Häuser zurück
+                availableHouses -= 4; // Diese Häuser sind jetzt "in use" aber sellable
+                availableHotels += 1; // Hotel geht zurück in die Bank
+                addLog(`${player.name} verkauft ein Hotel auf "${field.name}" für ${buildingCost}€`, 'payment');
+            } else if (field.houses > 0) {
+                // Verkaufe Häuser (eines nach dem anderen)
+                const housesToSell = field.houses;
+                player.money += buildingCost * housesToSell;
+                field.houses = 0;
+                availableHouses += housesToSell;
+                addLog(`${player.name} verkauft ${housesToSell} Haus/Häuser auf "${field.name}" für ${buildingCost * housesToSell}€`, 'payment');
+            }
+            
+            updateGameInfo(`${player.name} hat Gebäude verkauft!`);
+            drawBoard();
+            openBuildingMenu(playerIndex, fieldIndex);
         }
         
         function openSellMenu(playerIndex, fieldIndex) {
@@ -1016,6 +1738,7 @@
             const mortgageValue = field.price / 2;
             
             player.money += mortgageValue;
+            field.mortgaged = true; // Markiere als hypothekenbelastet
             const propIdx = player.ownedProperties.indexOf(fieldIndex);
             if (propIdx > -1) {
                 player.ownedProperties.splice(propIdx, 1);
@@ -1024,6 +1747,156 @@
             addLog(`${player.name} nimmt Hypothek auf ${field.name} auf (+${mortgageValue}€)`, 'info');
             updateGameInfo(`${player.name} nahm eine Hypothek auf ${field.name} auf (+${mortgageValue}€)`);
             closeActionModal();
+        }
+        
+        function unmortgageProperty(playerIndex, fieldIndex) {
+            const field = monopolyBoard[fieldIndex];
+            const player = players[playerIndex];
+            const unmortgageCost = Math.ceil(field.price / 2 * 1.1); // 10% Zinsen
+            
+            if (player.money < unmortgageCost) {
+                alert(`Nicht genug Geld! (benötigt: ${unmortgageCost}€, hast: ${player.money}€)`);
+                return;
+            }
+            
+            player.money -= unmortgageCost;
+            field.mortgaged = false;
+            player.ownedProperties.push(fieldIndex); // Füge zu Besitztümern hinzu
+            
+            addLog(`${player.name} löst Hypothek auf ${field.name} auf (-${unmortgageCost}€, inkl. Zinsen)`, 'info');
+            updateGameInfo(`${player.name} löste Hypothek auf ${field.name} auf!`);
+            closeActionModal();
+            
+            // Bankrott-Prüfung
+            checkBankruptcy(playerIndex);
+        }
+        
+        function openPropertyManagementMenu() {
+            const player = players[currentPlayer];
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('actionModalContent');
+            
+            // Sammle alle Grundstücke: owner Spieler + mortgaged Grundstücke
+            const allProperties = [];
+            
+            // 1. Alle im ownedProperties
+            player.ownedProperties.forEach(propIdx => {
+                allProperties.push(propIdx);
+            });
+            
+            // 2. Alle mortgaged (gehören dem Player, aber sind nicht in ownedProperties)
+            monopolyBoard.forEach((field, idx) => {
+                if (field.mortgaged && field.owner === currentPlayer && !allProperties.includes(idx)) {
+                    allProperties.push(idx);
+                }
+            });
+            
+            let html = `
+                <div class="action-modal-title">📋 Vermögenverwaltung</div>
+                <div class="action-modal-subtitle">${player.name} - Vermögen: ${player.money}€</div>
+            `;
+            
+            if (allProperties.length === 0) {
+                html += `<div class="action-warning">Du besitzt noch keine Immobilien</div>`;
+            } else {
+                html += `<div style="max-height: 600px; overflow-y: auto;">`;
+                
+                allProperties.forEach(propIdx => {
+                    const field = monopolyBoard[propIdx];
+                    const isMortgaged = field.mortgaged;
+                    const unmortgageCost = Math.ceil(field.price / 2 * 1.1);
+                    const houseCost = field.price / 2;
+                    const hotelCost = field.price / 2;
+                    
+                    html += `
+                        <div style="background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid ${colorMap[field.color] || '#ccc'};">
+                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">${field.name}</div>
+                            
+                            <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                                Kaufpreis: ${field.price}€ 
+                                ${isMortgaged ? `<span style="color: #ff6b6b; font-weight: bold;">🔒 HYPOTHEK BELASTET</span>` : ''}
+                            </div>
+                    `;
+                    
+                    // Häuser/Hotels anzeigen
+                    if (field.type === 'property') {
+                        html += `<div style="font-size: 11px; color: #666; margin-bottom: 10px;">
+                            🏠 Häuser: ${field.houses} | 🏰 Hotels: ${field.hotels}
+                        </div>`;
+                    }
+                    
+                    html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+                    
+                    if (field.type === 'property') {
+                        // Hypothek Buttons
+                        if (isMortgaged) {
+                            if (player.money >= unmortgageCost) {
+                                html += `<button class="action-btn sell" onclick="unmortgageProperty(${currentPlayer}, ${propIdx}); openPropertyManagementMenu();" style="grid-column: 1/2;">
+                                    💰 Hypothek auflösen (${unmortgageCost}€)
+                                </button>`;
+                            } else {
+                                html += `<div style="padding: 8px; background: #fee; color: #900; border-radius: 4px; font-size: 11px;">⚠️ Nicht genug Geld (${unmortgageCost}€)</div>`;
+                            }
+                        } else {
+                            html += `<button class="action-btn sell" onclick="mortgageProperty(${currentPlayer}, ${propIdx}); openPropertyManagementMenu();" style="grid-column: 1/2;">
+                                📌 Hypothek aufnehmen (+${field.price / 2}€)
+                            </button>`;
+                        }
+                        
+                        // Haus-Buttons (nur wenn nicht mortgaged)
+                        if (!isMortgaged) {
+                            const colorGroup = field.color;
+                            const propertiesInGroup = monopolyBoard.filter(f => f.color === colorGroup && f.type === 'property');
+                            const playerPropertiesInGroup = propertiesInGroup.filter(f => f.owner === currentPlayer);
+                            const allPropertiesOwnedInGroup = playerPropertiesInGroup.length === propertiesInGroup.length;
+                            
+                            // Haus kaufen
+                            if (field.houses < 4 && !field.hotels && allPropertiesOwnedInGroup && player.money >= houseCost && availableHouses > 0) {
+                                html += `<button class="action-btn build" onclick="buyHouse(${currentPlayer}, ${propIdx}); openPropertyManagementMenu();">
+                                    🏠 Haus (${houseCost}€)
+                                </button>`;
+                            } else if (field.houses < 4 && !field.hotels) {
+                                let reason = '';
+                                if (!allPropertiesOwnedInGroup) reason = '⚠️ Nicht alle Straßen der Farbe';
+                                else if (player.money < houseCost) reason = `⚠️ Zu teuer`;
+                                else if (availableHouses === 0) reason = '⚠️ Keine Häuser verfügbar';
+                                html += `<div style="padding: 4px; background: #f5f5f5; border-radius: 4px; font-size: 10px; color: #666;">${reason}</div>`;
+                            }
+                            
+                            // Hotel kaufen
+                            if (field.houses === 4 && !field.hotels && player.money >= hotelCost && availableHotels > 0 && availableHouses >= 4) {
+                                html += `<button class="action-btn build" onclick="buyHotel(${currentPlayer}, ${propIdx}); openPropertyManagementMenu();">
+                                    🏰 Hotel (${hotelCost}€)
+                                </button>`;
+                            } else if (field.houses === 4 && !field.hotels) {
+                                let reason = '';
+                                if (player.money < hotelCost) reason = '⚠️ Zu teuer';
+                                else if (availableHotels === 0) reason = '⚠️ Keine Hotels verfügbar';
+                                else if (availableHouses < 4) reason = '⚠️ Nicht genug Häuser';
+                                html += `<div style="padding: 4px; background: #f5f5f5; border-radius: 4px; font-size: 10px; color: #666;">${reason}</div>`;
+                            }
+                            
+                            // Haus/Hotel verkaufen
+                            if ((field.houses > 0 || field.hotels > 0) && !isMortgaged) {
+                                html += `<button class="action-btn pass" onclick="sellBuilding(${currentPlayer}, ${propIdx}); openPropertyManagementMenu();" style="grid-column: 1/3;">
+                                    🔄 Gebäude verkaufen
+                                </button>`;
+                            }
+                        }
+                    }
+                    
+                    html += `</div></div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            html += `<div class="action-buttons">
+                <button class="action-btn pass" onclick="closeActionModal()">Zurück</button>
+            </div>`;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
         }
         
         function closeActionModal() {
@@ -1204,7 +2077,7 @@
                         <div id="tradeOfferDisplay" style="min-height: 100px; background: white; padding: 10px; border-radius: 4px; color: #666; font-size: 12px;">
                             <em>Nichts gewählt</em>
                         </div>
-                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #1565c0; font-size: 12px;">Zu bieten:</div>
+                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #1565c0; font-size: 12px;">Immobilien:</div>
                         <div style="display: grid; gap: 6px;">
             `;
             
@@ -1224,6 +2097,8 @@
             
             html += `
                         </div>
+                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #1565c0; font-size: 12px;">Geld:</div>
+                        <input type="number" id="tradeOfferMoney" placeholder="€" min="0" max="${fromPlayer.money}" style="width: 100%; padding: 8px; border: 1px solid #2196F3; border-radius: 4px;" onchange="updateTradeBuilderDisplay('${fromPlayer.name}', '${toPlayer.name}')">
                     </div>
                     
                     <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; border: 2px solid #9c27b0;">
@@ -1231,7 +2106,7 @@
                         <div id="tradeRequestDisplay" style="min-height: 100px; background: white; padding: 10px; border-radius: 4px; color: #666; font-size: 12px;">
                             <em>Nichts gewählt</em>
                         </div>
-                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #6a1b9a; font-size: 12px;">Zur Verfügung stehen:</div>
+                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #6a1b9a; font-size: 12px;">Immobilien:</div>
                         <div style="display: grid; gap: 6px;">
             `;
             
@@ -1251,6 +2126,8 @@
             
             html += `
                         </div>
+                        <div style="font-weight: bold; margin-top: 10px; margin-bottom: 8px; color: #6a1b9a; font-size: 12px;">Geld:</div>
+                        <input type="number" id="tradeRequestMoney" placeholder="€" min="0" max="${toPlayer.money}" style="width: 100%; padding: 8px; border: 1px solid #9c27b0; border-radius: 4px;" onchange="updateTradeBuilderDisplay('${fromPlayer.name}', '${toPlayer.name}')">
                     </div>
                 </div>
                 
@@ -1265,7 +2142,7 @@
             content.innerHTML = html;
         }
         
-        let currentTradeBuilder = { offer: { properties: [] }, request: { properties: [] } };
+        let currentTradeBuilder = { offer: { properties: [], money: 0 }, request: { properties: [], money: 0 } };
         
         function toggleTradeItem(playerIdx, propIdx, direction, fromName, toName) {
             if (direction === 'offer') {
@@ -1289,40 +2166,82 @@
         function updateTradeBuilderDisplay(fromName, toName) {
             const offerDisplay = document.getElementById('tradeOfferDisplay');
             const requestDisplay = document.getElementById('tradeRequestDisplay');
+            const offerMoneyInput = document.getElementById('tradeOfferMoney');
+            const requestMoneyInput = document.getElementById('tradeRequestMoney');
             
-            if (currentTradeBuilder.offer.properties.length === 0) {
-                offerDisplay.innerHTML = '<em>Nichts gewählt</em>';
-            } else {
-                offerDisplay.innerHTML = currentTradeBuilder.offer.properties.map(p => 
-                    `<div style="background: #f5f5f5; padding: 6px; border-radius: 3px; margin: 3px 0;">✓ ${monopolyBoard[p].name}</div>`
-                ).join('');
+            // Update Geld von Input-Feldern
+            if (offerMoneyInput) {
+                currentTradeBuilder.offer.money = parseInt(offerMoneyInput.value) || 0;
+            }
+            if (requestMoneyInput) {
+                currentTradeBuilder.request.money = parseInt(requestMoneyInput.value) || 0;
             }
             
-            if (currentTradeBuilder.request.properties.length === 0) {
-                requestDisplay.innerHTML = '<em>Nichts gewählt</em>';
+            let offerHTML = '';
+            if (currentTradeBuilder.offer.properties.length === 0 && currentTradeBuilder.offer.money === 0) {
+                offerHTML = '<em>Nichts gewählt</em>';
             } else {
-                requestDisplay.innerHTML = currentTradeBuilder.request.properties.map(p => 
+                offerHTML = currentTradeBuilder.offer.properties.map(p => 
                     `<div style="background: #f5f5f5; padding: 6px; border-radius: 3px; margin: 3px 0;">✓ ${monopolyBoard[p].name}</div>`
                 ).join('');
+                if (currentTradeBuilder.offer.money > 0) {
+                    offerHTML += `<div style="background: #fff9e6; padding: 6px; border-radius: 3px; margin: 3px 0; border: 1px solid #ffc107;">💰 ${currentTradeBuilder.offer.money}€</div>`;
+                }
             }
+            offerDisplay.innerHTML = offerHTML;
+            
+            let requestHTML = '';
+            if (currentTradeBuilder.request.properties.length === 0 && currentTradeBuilder.request.money === 0) {
+                requestHTML = '<em>Nichts gewählt</em>';
+            } else {
+                requestHTML = currentTradeBuilder.request.properties.map(p => 
+                    `<div style="background: #f5f5f5; padding: 6px; border-radius: 3px; margin: 3px 0;">✓ ${monopolyBoard[p].name}</div>`
+                ).join('');
+                if (currentTradeBuilder.request.money > 0) {
+                    requestHTML += `<div style="background: #fff9e6; padding: 6px; border-radius: 3px; margin: 3px 0; border: 1px solid #ffc107;">💰 ${currentTradeBuilder.request.money}€</div>`;
+                }
+            }
+            requestDisplay.innerHTML = requestHTML;
         }
         
         function sendTradeOffer(fromIdx, toIdx) {
-            if (currentTradeBuilder.offer.properties.length === 0 && currentTradeBuilder.request.properties.length === 0) {
-                alert('Wähle mindestens eine Immobilie aus!');
+            // Update Geldbeträge von Input-Feldern
+            const offerMoneyInput = document.getElementById('tradeOfferMoney');
+            const requestMoneyInput = document.getElementById('tradeRequestMoney');
+            if (offerMoneyInput) currentTradeBuilder.offer.money = parseInt(offerMoneyInput.value) || 0;
+            if (requestMoneyInput) currentTradeBuilder.request.money = parseInt(requestMoneyInput.value) || 0;
+            
+            // Validierung
+            if (currentTradeBuilder.offer.properties.length === 0 && currentTradeBuilder.offer.money === 0 &&
+                currentTradeBuilder.request.properties.length === 0 && currentTradeBuilder.request.money === 0) {
+                alert('Wähle mindestens eine Immobilie oder einen Gelbetrag!');
+                return;
+            }
+            
+            const fromPlayer = players[fromIdx];
+            
+            // Prüfe ob genug Geld
+            if (currentTradeBuilder.offer.money > fromPlayer.money) {
+                alert(`Du hast nur ${fromPlayer.money}€! Du kannst maximal ${fromPlayer.money}€ anbieten.`);
                 return;
             }
             
             // Speichere das Angebot für den anderen Spieler
             pendingTradeOffers[toIdx] = {
                 from: fromIdx,
-                offer: { properties: [...currentTradeBuilder.offer.properties] },
-                request: { properties: [...currentTradeBuilder.request.properties] }
+                offer: { 
+                    properties: [...currentTradeBuilder.offer.properties],
+                    money: currentTradeBuilder.offer.money
+                },
+                request: { 
+                    properties: [...currentTradeBuilder.request.properties],
+                    money: currentTradeBuilder.request.money
+                }
             };
             
-            addLog(`${players[fromIdx].name} sendet Handelsangebot an ${players[toIdx].name}`, 'trade');
+            addLog(`${fromPlayer.name} sendet Handelsangebot an ${players[toIdx].name}`, 'trade');
             
-            currentTradeBuilder = { offer: { properties: [] }, request: { properties: [] } };
+            currentTradeBuilder = { offer: { properties: [], money: 0 }, request: { properties: [], money: 0 } };
             
             // Zeige sofort das Antwort-Modal für Spieler 2 an
             showTradeOfferResponseModal(toIdx);
@@ -1347,12 +2266,17 @@
                         <div style="background: white; padding: 10px; border-radius: 4px;">
             `;
             
-            if (offer.offer.properties.length === 0) {
+            if (offer.offer.properties.length === 0 && offer.offer.money === 0) {
                 html += `<em style="color: #999;">Nichts</em>`;
             } else {
-                html += offer.offer.properties.map(p => 
-                    `<div style="padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">✓ ${monopolyBoard[p].name}</div>`
-                ).join('');
+                if (offer.offer.properties.length > 0) {
+                    html += offer.offer.properties.map(p => 
+                        `<div style="padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">✓ ${monopolyBoard[p].name}</div>`
+                    ).join('');
+                }
+                if (offer.offer.money > 0) {
+                    html += `<div style="padding: 8px; background: #fff9e6; margin: 5px 0; border-radius: 3px; border: 1px solid #ffc107;">💰 ${offer.offer.money}€</div>`;
+                }
             }
             
             html += `
@@ -1364,12 +2288,17 @@
                         <div style="background: white; padding: 10px; border-radius: 4px;">
             `;
             
-            if (offer.request.properties.length === 0) {
+            if (offer.request.properties.length === 0 && offer.request.money === 0) {
                 html += `<em style="color: #999;">Nichts</em>`;
             } else {
-                html += offer.request.properties.map(p => 
-                    `<div style="padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">✓ ${monopolyBoard[p].name}</div>`
-                ).join('');
+                if (offer.request.properties.length > 0) {
+                    html += offer.request.properties.map(p => 
+                        `<div style="padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">✓ ${monopolyBoard[p].name}</div>`
+                    ).join('');
+                }
+                if (offer.request.money > 0) {
+                    html += `<div style="padding: 8px; background: #fff9e6; margin: 5px 0; border-radius: 3px; border: 1px solid #ffc107;">💰 ${offer.request.money}€</div>`;
+                }
             }
             
             html += `
@@ -1396,7 +2325,7 @@
             const fromPlayer = players[offer.from];
             const toPlayer = players[toIdx];
             
-            // Führe den Handel aus
+            // Führe den Handel aus - Immobilien
             offer.offer.properties.forEach(propIdx => {
                 const idx = fromPlayer.ownedProperties.indexOf(propIdx);
                 if (idx > -1) {
@@ -1413,7 +2342,20 @@
                 }
             });
             
-            addLog(`${fromPlayer.name} und ${toPlayer.name} einigen sich auf einen Handel`, 'trade');
+            // Führe den Handel aus - Geld
+            fromPlayer.money -= offer.offer.money;
+            toPlayer.money += offer.offer.money;
+            
+            toPlayer.money -= offer.request.money;
+            fromPlayer.money += offer.request.money;
+            
+            let tradeDesc = `${fromPlayer.name} und ${toPlayer.name} einigen sich auf einen Handel`;
+            if (offer.offer.properties.length > 0 || offer.offer.money > 0 || 
+                offer.request.properties.length > 0 || offer.request.money > 0) {
+                tradeDesc += ` (${offer.offer.properties.length} Immobilien + ${offer.offer.money}€ ↔ ${offer.request.properties.length} Immobilien + ${offer.request.money}€)`;
+            }
+            
+            addLog(tradeDesc, 'trade');
             delete pendingTradeOffers[toIdx];
             
             updateGamePlayersList();
